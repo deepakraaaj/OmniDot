@@ -1,0 +1,44 @@
+package com.omnidot.automation
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class WorkflowTextTest {
+    private fun rule(trigger: AutomationTrigger, action: AutomationAction, block: AutomationRule.() -> AutomationRule = { this }) =
+        AutomationRule(name = "", trigger = trigger, action = action).block()
+
+    @Test
+    fun `sentences read naturally`() {
+        val r = rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.SPEAK_TEXT) { copy(targetMessage = "Charging started") }
+        assertEquals("When charger connects", WorkflowText.whenText(r))
+        assertEquals("Speak \"Charging started\"", WorkflowText.doText(r))
+        assertEquals("When charger connects → speak \"Charging started\"", WorkflowText.name(r))
+        val wa = rule(AutomationTrigger.WHATSAPP_MESSAGE, AutomationAction.HTTP_POST) { copy(url = "https://hooks.example.com/x") }
+        assertEquals("When anyone messages on WhatsApp", WorkflowText.whenText(wa))
+        assertEquals("Send webhook to hooks.example.com", WorkflowText.doText(wa))
+        assertEquals("Send webhook to a URL", WorkflowText.doText(wa.copy(url = "not a url")))
+    }
+
+    @Test
+    fun `last run text`() {
+        val now = 10_000_000L
+        val base = rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.VIBRATE)
+        assertEquals(WorkflowText.LastRun("Not run yet", false), WorkflowText.lastRun(base, now))
+        assertEquals(WorkflowText.LastRun("✓ Ran just now", false), WorkflowText.lastRun(base.copy(lastRunTime = now - 20_000, lastRunStatus = "ok"), now))
+        assertEquals(WorkflowText.LastRun("✓ Ran 5 min ago", false), WorkflowText.lastRun(base.copy(lastRunTime = now - 300_000, lastRunStatus = "ok"), now))
+        assertEquals(WorkflowText.LastRun("✕ boom", true), WorkflowText.lastRun(base.copy(lastRunTime = now - 1, lastRunStatus = "Error: boom"), now))
+        assertEquals(WorkflowText.LastRun("✕ bad", true), WorkflowText.lastRun(base.copy(lastRunTime = now - 1, lastRunStatus = "✕ Failed: bad"), now))
+    }
+
+    @Test
+    fun `can save requires message, contact and url where needed`() {
+        assertFalse(WorkflowText.canSave(rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.SPEAK_TEXT)))
+        assertTrue(WorkflowText.canSave(rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.SPEAK_TEXT) { copy(targetMessage = "hi") }))
+        assertFalse(WorkflowText.canSave(rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.SEND_WHATSAPP) { copy(targetMessage = "hi") }))
+        assertFalse(WorkflowText.canSave(rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.HTTP_POST)))
+        assertTrue(WorkflowText.canSave(rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.VIBRATE)))
+        assertFalse(WorkflowText.canSave(rule(AutomationTrigger.SCHEDULED_TIME, AutomationAction.VIBRATE)))
+    }
+}

@@ -9,7 +9,12 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -24,6 +29,7 @@ import com.omnidot.ui.AppTab
 import com.omnidot.ui.AutomationScreen
 import com.omnidot.ui.OmniDotApp
 import com.omnidot.ui.goals.GoalsScreen
+import com.omnidot.ui.workflows.WorkflowsScreen
 import com.omnidot.ui.theme.OmniDotTheme
 import kotlinx.coroutines.launch
 
@@ -43,19 +49,35 @@ class MainActivity : ComponentActivity() {
             OmniDotTheme {
                 OmniDotApp(
                     initialTab = initialTab,
-                    workflows = { padding, _, _ ->
+                    workflows = { padding, snackbar, setHideBar ->
                         val automations by viewModel.automations.collectAsStateWithLifecycle()
-                        val testStatus by viewModel.testStatus.collectAsStateWithLifecycle()
-                        Box(Modifier.padding(padding)) {
-                            AutomationScreen(
+                        var editing by remember { mutableStateOf<AutomationRule?>(null) }
+                        var editorOpen by remember { mutableStateOf(false) }
+                        LaunchedEffect(editorOpen) { setHideBar(editorOpen) }
+                        val scope = rememberCoroutineScope()
+                        if (editorOpen) {
+                            Box(Modifier.padding(padding)) {
+                                AutomationScreen(
+                                    rules = automations,
+                                    testStatus = null,
+                                    onBack = { editorOpen = false },
+                                    onSave = { viewModel.saveAutomation(it); editorOpen = false },
+                                    onEnabledChanged = { id, enabled -> viewModel.setAutomationEnabled(id, enabled) },
+                                    onDelete = { viewModel.deleteAutomation(it) },
+                                    onTest = { viewModel.testAutomation(it) },
+                                    onClearTestStatus = {},
+                                )
+                            }
+                        } else {
+                            WorkflowsScreen(
                                 rules = automations,
-                                testStatus = testStatus,
-                                onBack = {},
-                                onSave = { viewModel.saveAutomation(it) },
+                                padding = padding,
+                                snackbar = snackbar,
+                                onOpenEditor = { editing = it; editorOpen = true },
                                 onEnabledChanged = { id, enabled -> viewModel.setAutomationEnabled(id, enabled) },
-                                onDelete = { viewModel.deleteAutomation(it) },
-                                onTest = { viewModel.testAutomation(it) },
-                                onClearTestStatus = viewModel::clearTestStatus,
+                                onDelete = { viewModel.deleteAutomation(it.id) },
+                                onRestore = { viewModel.restoreAutomation(it) },
+                                onTest = { rule -> viewModel.testAutomation(rule) { msg -> scope.launch { snackbar.showSnackbar(msg) } } },
                             )
                         }
                     },

@@ -1,5 +1,8 @@
 package com.omnidot.ui
 
+import com.omnidot.ui.workflows.actionIcon
+import com.omnidot.ui.workflows.triggerIcon
+
 import android.app.Activity
 import android.content.Intent
 import android.provider.ContactsContract
@@ -1483,39 +1486,4 @@ private fun CodeBox(code: String) {
             lineHeight = 14.sp,
         )
     }
-}
-
-private fun triggerIcon(trigger: AutomationTrigger): ImageVector = when (trigger) {
-    AutomationTrigger.WHATSAPP_MESSAGE -> Icons.Rounded.Forum
-    AutomationTrigger.WEATHER_RAIN -> Icons.Rounded.CloudUpload
-    AutomationTrigger.SCHEDULED_TIME -> Icons.Rounded.Schedule
-    AutomationTrigger.POWER_CONNECTED -> Icons.Rounded.Bolt
-    AutomationTrigger.POWER_DISCONNECTED -> Icons.Rounded.PowerOff
-    AutomationTrigger.BATTERY_LOW -> Icons.Rounded.BatteryAlert
-    AutomationTrigger.BATTERY_OKAY -> Icons.Rounded.BatteryFull
-    AutomationTrigger.DEVICE_BOOT -> Icons.Rounded.RestartAlt
-    AutomationTrigger.SCREEN_UNLOCKED -> Icons.Rounded.LockOpen
-    AutomationTrigger.DAILY_MIDNIGHT -> Icons.Rounded.Schedule
-    AutomationTrigger.WIFI_CONNECTED -> Icons.Rounded.Wifi
-    AutomationTrigger.WIFI_DISCONNECTED -> Icons.Rounded.WifiOff
-    AutomationTrigger.HEADSET_PLUG -> Icons.Rounded.Headphones
-    AutomationTrigger.INBOUND_WEBHOOK -> Icons.Rounded.Language
-}
-
-private fun actionIcon(action: AutomationAction): ImageVector = when (action) {
-    AutomationAction.SPEAK_TEXT -> Icons.Rounded.Info
-    AutomationAction.SEND_WHATSAPP -> Icons.Rounded.Forum
-    AutomationAction.CALL_PHONE -> Icons.Rounded.Bolt
-    AutomationAction.APPLY_PRESET -> Icons.Rounded.Wallpaper
-    AutomationAction.REFRESH_CURRENT -> Icons.Rounded.Refresh
-    AutomationAction.CYCLE_PRESET -> Icons.Rounded.Sync
-    AutomationAction.CYCLE_ACCENT -> Icons.Rounded.Palette
-    AutomationAction.HTTP_REQUEST -> Icons.Rounded.Language
-    AutomationAction.HTTP_POST -> Icons.Rounded.CloudUpload
-    AutomationAction.DISCORD_WEBHOOK -> Icons.Rounded.Forum
-    AutomationAction.SLACK_WEBHOOK -> Icons.AutoMirrored.Rounded.Send
-    AutomationAction.SHOW_NOTIFICATION -> Icons.Rounded.NotificationsActive
-    AutomationAction.VIBRATE -> Icons.Rounded.Vibration
-    AutomationAction.COPY_STATS -> Icons.Rounded.ContentCopy
-    AutomationAction.OPEN_URL -> Icons.Rounded.OpenInBrowser
 }

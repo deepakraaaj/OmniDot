@@ -52,6 +52,8 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
         automationRepository.setEnabled(id, enabled)
     }
 
+    fun restoreAutomation(rule: AutomationRule) = saveAutomation(rule)
+
     fun deleteAutomation(id: String) = viewModelScope.launch {
         automationRepository.delete(id)
     }
