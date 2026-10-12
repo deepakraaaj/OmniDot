@@ -84,9 +84,10 @@ class AutomationRuleTest {
 
     @Test
     fun `hidden triggers are excluded from the picker`() {
-        val hidden = setOf(AutomationTrigger.SCHEDULED_TIME, AutomationTrigger.WEATHER_RAIN, AutomationTrigger.DAILY_MIDNIGHT)
+        val hidden = setOf(AutomationTrigger.WEATHER_RAIN, AutomationTrigger.DAILY_MIDNIGHT)
         hidden.forEach { assertTrue(!it.available && it !in AutomationTrigger.pickerOptions) }
         assertTrue(AutomationTrigger.POWER_CONNECTED in AutomationTrigger.pickerOptions)
+        assertTrue(AutomationTrigger.SCHEDULED_TIME in AutomationTrigger.pickerOptions)
     }
 
     @Test

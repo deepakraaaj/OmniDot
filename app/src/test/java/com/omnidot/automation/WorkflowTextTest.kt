@@ -39,12 +39,22 @@ class WorkflowTextTest {
         assertFalse(WorkflowText.canSave(rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.SEND_WHATSAPP) { copy(targetMessage = "hi") }))
         assertFalse(WorkflowText.canSave(rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.HTTP_POST)))
         assertTrue(WorkflowText.canSave(rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.VIBRATE)))
-        assertFalse(WorkflowText.canSave(rule(AutomationTrigger.SCHEDULED_TIME, AutomationAction.VIBRATE)))
+        assertTrue(WorkflowText.canSave(rule(AutomationTrigger.SCHEDULED_TIME, AutomationAction.VIBRATE)))
+        assertFalse(WorkflowText.canSave(rule(AutomationTrigger.SCHEDULED_TIME, AutomationAction.VIBRATE) { copy(scheduledTime = "7am") }))
+        assertFalse(WorkflowText.canSave(rule(AutomationTrigger.WEATHER_RAIN, AutomationAction.VIBRATE)))
     }
 
     @Test
     fun `blank speak text reads as a prompt not empty quotes`() {
         val r = rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.SPEAK_TEXT)
         assertEquals("Speak your words", WorkflowText.doText(r))
+    }
+
+    @Test
+    fun `time trigger sentence names the days`() {
+        val r = rule(AutomationTrigger.SCHEDULED_TIME, AutomationAction.VIBRATE) { copy(scheduledTime = "07:00") }
+        assertEquals("Every day at 07:00", WorkflowText.whenText(r))
+        val weekdays = setOf(java.time.DayOfWeek.MONDAY, java.time.DayOfWeek.TUESDAY, java.time.DayOfWeek.WEDNESDAY, java.time.DayOfWeek.THURSDAY, java.time.DayOfWeek.FRIDAY)
+        assertEquals("Weekdays at 07:00", WorkflowText.whenText(r.copy(days = weekdays)))
     }
 }

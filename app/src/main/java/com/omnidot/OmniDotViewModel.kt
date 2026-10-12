@@ -3,6 +3,7 @@ package com.omnidot
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.omnidot.alarm.AlarmScheduler
 import com.omnidot.automation.AutomationEngine
 import com.omnidot.automation.AutomationRepository
 import com.omnidot.automation.AutomationRule
@@ -47,17 +48,22 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
 
     fun saveAutomation(rule: AutomationRule) = viewModelScope.launch {
         automationRepository.save(rule)
+        syncTimeRules()
     }
+
+    private suspend fun syncTimeRules() = AlarmScheduler.syncTimeRules(getApplication(), automationRepository.current())
 
     fun setAutomationEnabled(id: String, enabled: Boolean) = viewModelScope.launch {
         val rule = automations.value.firstOrNull { it.id == id } ?: return@launch
         if (enabled && !rule.trigger.available) return@launch
         automationRepository.setEnabled(id, enabled)
+        syncTimeRules()
     }
 
     fun restoreAutomation(rule: AutomationRule) = saveAutomation(rule)
 
     fun deleteAutomation(id: String) = viewModelScope.launch {
+        AlarmScheduler.cancelTimeRule(getApplication(), id)
         automationRepository.delete(id)
     }
 

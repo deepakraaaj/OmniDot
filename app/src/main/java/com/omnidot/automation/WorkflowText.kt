@@ -1,5 +1,6 @@
 package com.omnidot.automation
 
+import com.omnidot.alarm.DaysText
 import java.net.URI
 
 object WorkflowText {
@@ -17,7 +18,7 @@ object WorkflowText {
         AutomationTrigger.WIFI_DISCONNECTED -> "When Wi-Fi disconnects"
         AutomationTrigger.WHATSAPP_MESSAGE -> "When ${rule.contactName.ifBlank { "anyone" }} messages on WhatsApp"
         AutomationTrigger.INBOUND_WEBHOOK -> "When a remote trigger arrives"
-        AutomationTrigger.SCHEDULED_TIME -> "Every day at ${rule.scheduledTime}"
+        AutomationTrigger.SCHEDULED_TIME -> "${if (rule.days.isEmpty()) "Every day" else DaysText.describe(rule.days)} at ${rule.scheduledTime}"
         AutomationTrigger.WEATHER_RAIN -> "When rain is forecast"
         AutomationTrigger.DAILY_MIDNIGHT -> "At midnight"
     }
@@ -63,6 +64,7 @@ object WorkflowText {
 
     fun canSave(rule: AutomationRule): Boolean {
         if (!rule.trigger.available) return false
+        if (rule.trigger == AutomationTrigger.SCHEDULED_TIME && DaysText.parseTime(rule.scheduledTime) == null) return false
         return when (rule.action) {
             AutomationAction.SPEAK_TEXT -> rule.targetMessage.isNotBlank()
             AutomationAction.SEND_WHATSAPP, AutomationAction.CALL_PHONE ->

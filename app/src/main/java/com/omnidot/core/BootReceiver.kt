@@ -3,6 +3,7 @@ package com.omnidot.core
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.omnidot.alarm.AlarmScheduler
 import com.omnidot.data.PreferencesManager
 import com.omnidot.goals.reminder.CheckInReminderWorker
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +23,7 @@ class BootReceiver : BroadcastReceiver() {
                 val pending = goAsync()
                 CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
                     try {
+                        AlarmScheduler.rescheduleAll(context)
                         val settings = PreferencesManager(context).current()
                         if (settings.reminderEnabled) CheckInReminderWorker.schedule(context, settings.reminderMinuteOfDay)
                     } finally {

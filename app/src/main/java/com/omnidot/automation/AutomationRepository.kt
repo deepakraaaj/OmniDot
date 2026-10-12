@@ -70,6 +70,7 @@ class AutomationRepository(private val context: Context) {
                 put("contactPhone", rule.contactPhone)
                 put("targetMessage", rule.targetMessage)
                 put("scheduledTime", rule.scheduledTime)
+                put("days", JSONArray(rule.days.sorted().map { it.name }))
                 put("weatherCondition", rule.weatherCondition)
                 put("url", rule.url)
                 put("message", rule.message)
@@ -100,6 +101,9 @@ class AutomationRepository(private val context: Context) {
                         contactPhone = item.optString("contactPhone", ""),
                         targetMessage = item.optString("targetMessage", ""),
                         scheduledTime = item.optString("scheduledTime", "07:00"),
+                        days = item.optJSONArray("days")?.let { days ->
+                            (0 until days.length()).mapNotNull { d -> java.time.DayOfWeek.entries.firstOrNull { it.name == days.optString(d) } }.toSet()
+                        } ?: emptySet(),
                         weatherCondition = item.optString("weatherCondition", "Rain"),
                         url = item.optString("url"),
                         message = item.optString("message", "Progress: {year_percent}% complete"),

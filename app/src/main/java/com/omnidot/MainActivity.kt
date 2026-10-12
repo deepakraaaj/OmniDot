@@ -26,6 +26,7 @@ import com.omnidot.core.MatrixPreset
 import com.omnidot.data.PreferencesManager
 import com.omnidot.ui.AppTab
 import com.omnidot.ui.OmniDotApp
+import com.omnidot.ui.alarms.AlarmsScreen
 import com.omnidot.ui.goals.GoalsScreen
 import com.omnidot.ui.settings.SettingsScreen
 import com.omnidot.ui.workflows.WorkflowEditor
@@ -45,7 +46,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         // Only on a fresh launch: a rotation or recreate must not run the same link again.
         if (savedInstanceState == null) handleDeepLink(intent)
-        val initialTab = if (intent?.getStringExtra(EXTRA_OPEN_TAB) == "goals") AppTab.GOALS else AppTab.WORKFLOWS
+        val initialTab = when (intent?.getStringExtra(EXTRA_OPEN_TAB)) {
+            "goals" -> AppTab.GOALS
+            "alarms" -> AppTab.ALARMS
+            else -> AppTab.WORKFLOWS
+        }
         setContent {
             OmniDotTheme {
                 OmniDotApp(
@@ -84,6 +89,7 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     goals = { padding, snackbar -> GoalsScreen(padding, snackbar) },
+                    alarms = { padding, snackbar -> AlarmsScreen(padding, snackbar) },
                     settings = { padding, snackbar -> SettingsScreen(padding, snackbar, viewModel) },
                 )
             }

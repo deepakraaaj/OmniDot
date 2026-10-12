@@ -22,10 +22,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.omnidot.automation.*
 import com.omnidot.core.MatrixPreset
+import com.omnidot.alarm.DaysText
 import com.omnidot.ui.MaxContentWidth
+import com.omnidot.ui.alarms.formatClock
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun WorkflowEditor(
     initial: AutomationRule?,
@@ -93,6 +95,31 @@ fun WorkflowEditor(
             Text("When", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
             ChoiceRow(triggerIcon(rule.trigger), WorkflowText.whenText(rule), rule.trigger.subtitle) { sheet = "trigger" }
             if (rule.trigger.needsAppAlive) Note("Works while OmniDot is running. Background reliability comes in the next update.")
+            if (rule.trigger == AutomationTrigger.SCHEDULED_TIME) {
+                val minute = DaysText.parseTime(rule.scheduledTime) ?: (7 * 60)
+                OutlinedButton(
+                    onClick = {
+                        android.app.TimePickerDialog(context, { _, h, m -> rule = rule.copy(scheduledTime = DaysText.formatTime(h * 60 + m)) },
+                            minute / 60, minute % 60, android.text.format.DateFormat.is24HourFormat(context)).show()
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                ) { Text("At ${formatClock(context, minute)}") }
+                Text("Repeat · ${if (rule.days.isEmpty()) "Every day" else DaysText.describe(rule.days)}",
+                    style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    java.time.DayOfWeek.entries.forEach { day ->
+                        FilterChip(
+                            selected = rule.days.isEmpty() || day in rule.days,
+                            onClick = {
+                                val current = if (rule.days.isEmpty()) java.time.DayOfWeek.entries.toSet() else rule.days
+                                val next = if (day in current) current - day else current + day
+                                rule = rule.copy(days = if (next.size == 7) emptySet() else next)
+                            },
+                            label = { Text(day.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault())) },
+                        )
+                    }
+                }
+            }
             if (rule.trigger == AutomationTrigger.WHATSAPP_MESSAGE) {
                 Field(rule.contactName, { rule = rule.copy(contactName = it) }, "Message from", "Contact name (leave empty for anyone)")
             }

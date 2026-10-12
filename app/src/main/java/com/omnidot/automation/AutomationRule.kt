@@ -34,11 +34,10 @@ enum class AutomationTrigger(
         available = false,
     ),
     SCHEDULED_TIME(
-        label = "Scheduled time (Daily)",
+        label = "At a time",
         category = TriggerCategory.SCHEDULE,
-        subtitle = "At a specific time every morning (e.g. 07:00 AM)",
+        subtitle = "At a set time, every day or on chosen days",
         guideInfo = "Runs automatically at your chosen scheduled hour and minute every day.",
-        available = false,
     ),
     POWER_CONNECTED(
         label = "Charger connected",
@@ -250,6 +249,8 @@ data class AutomationRule(
     val contactPhone: String = "",
     val targetMessage: String = "",
     val scheduledTime: String = "07:00",
+    /** Days for SCHEDULED_TIME; empty means every day. */
+    val days: Set<java.time.DayOfWeek> = emptySet(),
     val weatherCondition: String = "Rain",
     val url: String = "",
     val message: String = "Progress: {year_percent}% complete",
