@@ -14,7 +14,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
-import com.omnidot.core.AdaptiveMatrixEngine
+import com.omnidot.core.WallpaperRefresher
 import com.omnidot.core.MatrixPreset
 import com.omnidot.data.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
@@ -41,12 +41,12 @@ object AutomationEngine {
                 AutomationAction.APPLY_PRESET -> {
                     preferencesManager.setPreset(rule.preset)
                     val updated = currentPrefs.copy(preset = rule.preset)
-                    AdaptiveMatrixEngine().applyToLockscreen(context, updated, emptyList())
+                    WallpaperRefresher.apply(context, updated)
                     "Lockscreen updated with '${rule.preset.title}'"
                 }
 
                 AutomationAction.REFRESH_CURRENT -> {
-                    AdaptiveMatrixEngine().applyToLockscreen(context, currentPrefs, emptyList())
+                    WallpaperRefresher.apply(context, currentPrefs)
                     "Current lockscreen HUD refreshed"
                 }
 
@@ -56,13 +56,13 @@ object AutomationEngine {
                     val nextPreset = presets[(currentIndex + 1) % presets.size]
                     preferencesManager.setPreset(nextPreset)
                     val updated = currentPrefs.copy(preset = nextPreset)
-                    AdaptiveMatrixEngine().applyToLockscreen(context, updated, emptyList())
+                    WallpaperRefresher.apply(context, updated)
                     "Cycled to next preset: ${nextPreset.title}"
                 }
 
                 AutomationAction.CYCLE_ACCENT -> {
                     val colors = listOf(
-                        0xFFE65100.toInt(), // Amber
+                        0xFF5FB3A6.toInt(), // Teal
                         0xFF00C853.toInt(), // Emerald Green
                         0xFF2979FF.toInt(), // Cyber Blue
                         0xFFAA00FF.toInt(), // Purple
@@ -74,7 +74,7 @@ object AutomationEngine {
                     val nextColor = colors[(currentIndex + 1) % colors.size]
                     preferencesManager.setAccentColor(nextColor)
                     val updated = currentPrefs.copy(accentColor = nextColor)
-                    AdaptiveMatrixEngine().applyToLockscreen(context, updated, emptyList())
+                    WallpaperRefresher.apply(context, updated)
                     "Cycled accent color to #${Integer.toHexString(nextColor).uppercase()}"
                 }
 

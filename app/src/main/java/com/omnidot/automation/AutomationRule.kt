@@ -157,7 +157,7 @@ enum class AutomationAction(
     CYCLE_PRESET(
         label = "Cycle to next matrix",
         category = ActionCategory.MATRIX,
-        subtitle = "Rotate: Year → Life → Sprint → Field",
+        subtitle = "Rotate: Goals → Year → Life",
         guideInfo = "Switches to the next matrix sequentially.",
     ),
     CYCLE_ACCENT(

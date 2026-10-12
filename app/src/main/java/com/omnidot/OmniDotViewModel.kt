@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.omnidot.automation.AutomationEngine
 import com.omnidot.automation.AutomationRepository
 import com.omnidot.automation.AutomationRule
-import com.omnidot.core.AdaptiveMatrixEngine
+import com.omnidot.core.WallpaperRefresher
 import com.omnidot.core.MatrixPreset
 import com.omnidot.core.MatrixSyncWorker
 import com.omnidot.data.OmniDotPreferences
@@ -87,7 +87,7 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
     fun applyWallpaper() = viewModelScope.launch {
         _applyStatus.value = ApplyStatus.Applying
         _applyStatus.value = try {
-            AdaptiveMatrixEngine().applyToLockscreen(getApplication(), preferences.value, emptyList())
+            WallpaperRefresher.apply(getApplication(), preferences.value)
             if (preferences.value.automaticUpdates) MatrixSyncWorker.scheduleNext(getApplication())
             ApplyStatus.Applied
         } catch (error: Exception) {
