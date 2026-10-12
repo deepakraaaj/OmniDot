@@ -6,8 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.omnidot.automation.AutomationEngine
 import com.omnidot.automation.AutomationRepository
 import com.omnidot.automation.AutomationRule
-import com.omnidot.core.WallpaperRefresher
-import com.omnidot.core.MatrixPreset
 import com.omnidot.core.MatrixSyncWorker
 import com.omnidot.data.OmniDotPreferences
 import com.omnidot.data.PreferencesManager
@@ -17,14 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-
-sealed interface ApplyStatus {
-    data object Idle : ApplyStatus
-    data object Applying : ApplyStatus
-    data object Applied : ApplyStatus
-    data class Error(val message: String) : ApplyStatus
-}
 
 class OmniDotViewModel(application: Application) : AndroidViewModel(application) {
     private val preferencesManager = PreferencesManager(application)
@@ -34,8 +24,6 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
         SharingStarted.WhileSubscribed(5_000),
         OmniDotPreferences(),
     )
-    private val _applyStatus = MutableStateFlow<ApplyStatus>(ApplyStatus.Idle)
-    val applyStatus = _applyStatus.asStateFlow()
     val automations = automationRepository.rules.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
@@ -51,47 +39,6 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
             if (preferencesManager.current().automaticUpdates) {
                 MatrixSyncWorker.scheduleNext(application)
             }
-        }
-    }
-
-    fun selectPreset(preset: MatrixPreset) = viewModelScope.launch {
-        preferencesManager.setPreset(preset)
-        _applyStatus.value = ApplyStatus.Idle
-    }
-
-    fun setBirthDate(date: LocalDate) = viewModelScope.launch {
-        preferencesManager.setBirthDate(date)
-    }
-
-    fun setAutomaticUpdates(enabled: Boolean) = viewModelScope.launch {
-        preferencesManager.setAutomaticUpdates(enabled)
-        if (enabled) MatrixSyncWorker.scheduleNext(getApplication())
-        else MatrixSyncWorker.cancel(getApplication())
-    }
-
-    fun setVerticalOffset(offset: Float) = viewModelScope.launch {
-        preferencesManager.setVerticalOffset(offset)
-        _applyStatus.value = ApplyStatus.Idle
-    }
-
-    fun setMatrixScale(scale: Float) = viewModelScope.launch {
-        preferencesManager.setMatrixScale(scale)
-        _applyStatus.value = ApplyStatus.Idle
-    }
-
-    fun setAccentColor(color: Int) = viewModelScope.launch {
-        preferencesManager.setAccentColor(color)
-        _applyStatus.value = ApplyStatus.Idle
-    }
-
-    fun applyWallpaper() = viewModelScope.launch {
-        _applyStatus.value = ApplyStatus.Applying
-        _applyStatus.value = try {
-            WallpaperRefresher.apply(getApplication(), preferences.value)
-            if (preferences.value.automaticUpdates) MatrixSyncWorker.scheduleNext(getApplication())
-            ApplyStatus.Applied
-        } catch (error: Exception) {
-            ApplyStatus.Error(error.message ?: "Could not set the lockscreen wallpaper")
         }
     }
 

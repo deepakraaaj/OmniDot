@@ -22,7 +22,7 @@ import com.omnidot.core.MatrixPreset
 import com.omnidot.ui.AppTab
 import com.omnidot.ui.AutomationScreen
 import com.omnidot.ui.OmniDotApp
-import com.omnidot.ui.PreviewScreen
+import com.omnidot.ui.goals.GoalsScreen
 import com.omnidot.ui.theme.OmniDotTheme
 import kotlinx.coroutines.launch
 
@@ -58,20 +58,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     },
-                    goals = { padding, _ ->
-                        val preferences by viewModel.preferences.collectAsStateWithLifecycle()
-                        val status by viewModel.applyStatus.collectAsStateWithLifecycle()
-                        Box(Modifier.padding(padding)) {
-                            PreviewScreen(
-                                preferences = preferences,
-                                applyStatus = status,
-                                onPresetSelected = { viewModel.selectPreset(it) },
-                                onOpenCustomize = {},
-                                onOpenAutomations = {},
-                                onApply = { viewModel.applyWallpaper() },
-                            )
-                        }
-                    },
+                    goals = { padding, snackbar -> GoalsScreen(padding, snackbar) },
                     settings = { padding, _ -> Box(Modifier.padding(padding)) { Text("Settings") } },
                 )
             }
