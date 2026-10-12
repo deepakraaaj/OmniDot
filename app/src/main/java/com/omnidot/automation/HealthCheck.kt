@@ -1,13 +1,10 @@
 package com.omnidot.automation
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
-import androidx.core.content.ContextCompat
+import androidx.core.app.NotificationManagerCompat
 
 enum class HealthIssue(val title: String, val detail: String) {
     NOTIFICATIONS_BLOCKED("Notifications are off", "Workflows that show notifications can't alert you."),
@@ -34,8 +31,7 @@ object HealthCheck {
     }
 
     fun probe(context: Context): HealthProbe = HealthProbe(
-        notificationsGranted = Build.VERSION.SDK_INT < 33 ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED,
+        notificationsGranted = NotificationManagerCompat.from(context).areNotificationsEnabled(),
         listenerGranted = OmniNotificationListenerService.isNotificationAccessGranted(context),
         ignoringBatteryOptimizations = context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName),
     )

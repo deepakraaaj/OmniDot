@@ -18,7 +18,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 
-private val Context.omniDotDataStore by preferencesDataStore(name = "omnidot_preferences")
+private val Context.omniDotDataStore by preferencesDataStore(
+    name = "omnidot_preferences",
+    produceMigrations = { listOf(LegacyPrefsMigration) },
+)
 
 data class OmniDotPreferences(
     val preset: MatrixPreset = MatrixPreset.GOALS,

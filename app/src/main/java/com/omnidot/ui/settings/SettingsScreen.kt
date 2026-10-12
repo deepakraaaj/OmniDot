@@ -40,7 +40,13 @@ fun SettingsScreen(padding: PaddingValues, snackbar: SnackbarHostState, vm: Omni
     val key by vm.remoteKey.collectAsStateWithLifecycle()
     var probe by remember { mutableStateOf(HealthCheck.probe(context)) }
     LifecycleResumeEffect(Unit) { probe = HealthCheck.probe(context); onPauseOrDispose { } }
-    val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { probe = HealthCheck.probe(context) }
+    val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        // After repeated denials Android returns immediately without a dialog; send the user to settings instead.
+        if (!granted || !HealthCheck.probe(context).notificationsGranted) {
+            context.startActivity(HealthCheck.fixIntent(context, HealthIssue.NOTIFICATIONS_BLOCKED))
+        }
+        probe = HealthCheck.probe(context)
+    }
 
     Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)

@@ -65,6 +65,20 @@ fun GoalsScreen(padding: PaddingValues, snackbar: SnackbarHostState, vm: GoalsVi
                 }
             }
             items(active, key = { it.id }) { goal -> GoalRow(goal, today) { detailId = goal.id } }
+            val archived = goals.filter { it.archived }
+            if (archived.isNotEmpty()) {
+                item { SectionHeader("Archived") }
+                items(archived, key = { "archived-${it.id}" }) { goal ->
+                    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface) {
+                        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("${goal.emoji} ${goal.title}", style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f),
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            TextButton(onClick = { vm.restore(goal.copy(archived = false)) }) { Text("Restore") }
+                        }
+                    }
+                }
+            }
             item { LockscreenSection(prefs, goals, status, vm) }
         }
         ExtendedFloatingActionButton(
@@ -80,7 +94,13 @@ fun GoalsScreen(padding: PaddingValues, snackbar: SnackbarHostState, vm: GoalsVi
             goal = goal, onDismiss = { detailId = null },
             onToggle = { vm.toggle(goal.id, it) },
             onEdit = { detailId = null; editor = goal; editorOpen = true },
-            onArchive = { detailId = null; vm.archive(goal) },
+            onArchive = {
+                detailId = null
+                vm.archive(goal)
+                scope.launch {
+                    if (snackbar.showSnackbar("Goal archived", actionLabel = "Undo", withDismissAction = true) == SnackbarResult.ActionPerformed) vm.restore(goal)
+                }
+            },
             onDelete = {
                 detailId = null
                 vm.delete(goal)

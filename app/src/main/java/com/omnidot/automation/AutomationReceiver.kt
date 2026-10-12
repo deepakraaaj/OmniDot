@@ -43,27 +43,24 @@ class AutomationReceiver : BroadcastReceiver() {
     private fun resolveTrigger(context: Context, intent: Intent?): AutomationTrigger? {
         val action = intent?.action ?: return null
         return when (action) {
-            Intent.ACTION_POWER_CONNECTED -> AutomationTrigger.POWER_CONNECTED
-            Intent.ACTION_POWER_DISCONNECTED -> AutomationTrigger.POWER_DISCONNECTED
-            Intent.ACTION_BATTERY_LOW -> AutomationTrigger.BATTERY_LOW
-            Intent.ACTION_BATTERY_OKAY -> AutomationTrigger.BATTERY_OKAY
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED -> AutomationTrigger.DEVICE_BOOT
-            Intent.ACTION_USER_PRESENT -> AutomationTrigger.SCREEN_UNLOCKED
-            Intent.ACTION_HEADSET_PLUG -> AutomationTrigger.HEADSET_PLUG
-            "android.net.conn.CONNECTIVITY_CHANGE" -> {
-                if (isWifiConnected(context)) AutomationTrigger.WIFI_CONNECTED
-                else AutomationTrigger.WIFI_DISCONNECTED
-            }
             ACTION_REMOTE_TRIGGER -> {
                 val triggerExtra = intent.getStringExtra("trigger")
-                if (!triggerExtra.isNullOrBlank()) {
-                    AutomationTrigger.fromStored(triggerExtra)
-                } else {
-                    AutomationTrigger.INBOUND_WEBHOOK
-                }
+                if (!triggerExtra.isNullOrBlank()) AutomationTrigger.fromStored(triggerExtra) else AutomationTrigger.INBOUND_WEBHOOK
             }
-            else -> null
+            else -> {
+                val wifiNow = action == CONNECTIVITY_CHANGE && isWifiConnected(context)
+                val trigger = DeviceEvents.resolve(
+                    action = action,
+                    initialSticky = isInitialStickyBroadcast,
+                    headsetState = intent.getIntExtra("state", -1),
+                    wifiNow = wifiNow,
+                    lastWifi = lastWifi,
+                )
+                if (action == CONNECTIVITY_CHANGE) lastWifi = wifiNow
+                trigger
+            }
         }
     }
 
@@ -83,6 +80,11 @@ class AutomationReceiver : BroadcastReceiver() {
 
     companion object {
         const val ACTION_REMOTE_TRIGGER = "com.omnidot.TRIGGER_ACTION"
+        private const val CONNECTIVITY_CHANGE = "android.net.conn.CONNECTIVITY_CHANGE"
+
+        /** Last observed Wi-Fi state in this process; the sticky replay at registration seeds it. */
+        @Volatile
+        private var lastWifi: Boolean? = null
 
         fun deviceEventFilter(): IntentFilter = IntentFilter().apply {
             addAction(Intent.ACTION_POWER_CONNECTED)

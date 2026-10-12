@@ -105,7 +105,7 @@ enum class AutomationTrigger(
     HEADSET_PLUG(
         label = "Headphones connected",
         category = TriggerCategory.HARDWARE,
-        subtitle = "When wired or Bluetooth audio connects",
+        subtitle = "When wired headphones are plugged in",
         guideInfo = "Fires when headphones or earbuds are connected.",
         needsAppAlive = true,
     ),

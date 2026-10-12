@@ -41,9 +41,11 @@ object GoalsMatrix {
         val detail = if (visibleGoals.isEmpty()) {
             "Add a goal to start"
         } else {
-            val elapsed = cells.filterNotNull().filter { !it.isAfter(today) }
-            val achieved = elapsed.count { GoalDays.dayState(it, visibleGoals, today) is DayState.Achieved }
-            "$achieved of ${elapsed.size} days showed up"
+            // Only days with at least one active goal count; days before any goal existed are not "missed".
+            val states = cells.filterNotNull().filter { !it.isAfter(today) }
+                .map { GoalDays.dayState(it, visibleGoals, today) }
+                .filter { it != DayState.NoGoal }
+            "${states.count { it is DayState.Achieved }} of ${states.size} days showed up"
         }
         return GoalsMatrixState(cells, columns, rows, title, detail)
     }

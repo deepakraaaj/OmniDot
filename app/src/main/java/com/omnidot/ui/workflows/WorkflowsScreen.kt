@@ -64,7 +64,11 @@ fun WorkflowsScreen(
     LifecycleResumeEffect(Unit) { probe = HealthCheck.probe(context); onPauseOrDispose { } }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { delay(30_000); now = System.currentTimeMillis() } }
-    val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+    val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        // After repeated denials Android returns immediately without a dialog; send the user to settings instead.
+        if (!granted || !HealthCheck.probe(context).notificationsGranted) {
+            context.startActivity(HealthCheck.fixIntent(context, HealthIssue.NOTIFICATIONS_BLOCKED))
+        }
         probe = HealthCheck.probe(context)
     }
     val issues = HealthCheck.issues(probe.notificationsGranted, probe.listenerGranted, probe.ignoringBatteryOptimizations, rules)

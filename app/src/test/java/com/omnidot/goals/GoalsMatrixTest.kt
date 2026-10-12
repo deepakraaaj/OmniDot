@@ -55,4 +55,11 @@ class GoalsMatrixTest {
         val g = Goal("a", "Run", "🌱", GoalTier.SMALL, LocalDate.of(2026, 10, 1), null, setOf(LocalDate.of(2026, 10, 2), LocalDate.of(2026, 10, 12)))
         assertEquals("2 of 12 days showed up", GoalsMatrix.build(listOf(g), LockPeriod.THIS_MONTH, today).detail)
     }
+
+    @Test
+    fun `days before any goal existed are not counted as missed`() {
+        val today = LocalDate.of(2026, 10, 12)
+        val g = Goal("a", "Run", "🌱", GoalTier.SMALL, today, null, setOf(today))
+        assertEquals("1 of 1 days showed up", GoalsMatrix.build(listOf(g), LockPeriod.THIS_MONTH, today).detail)
+    }
 }
