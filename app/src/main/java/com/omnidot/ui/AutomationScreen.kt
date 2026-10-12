@@ -776,11 +776,7 @@ private fun WorkflowEditor(
                     onClick = {
                         scope.launch {
                             if (playChime) {
-                                if (trigger == AutomationTrigger.POWER_DISCONNECTED || speechPitch < 0.95f) {
-                                    SoundSynthesizer.playPowerDisconnectedChime()
-                                } else {
-                                    SoundSynthesizer.playPowerConnectedChime()
-                                }
+                                SoundSynthesizer.playSoftBell()
                             }
                             VoiceFeedbackManager.speak(
                                 context = context,

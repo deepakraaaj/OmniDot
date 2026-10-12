@@ -156,26 +156,20 @@ object AutomationEngine {
                 }
 
                 AutomationAction.SPEAK_TEXT -> {
-                    val textToSpeak = resolveVariables(
-                        rule.targetMessage.ifBlank { rule.message },
-                        context,
-                        rule,
-                    )
+                    val textToSpeak = resolveVariables(rule.targetMessage.ifBlank { rule.message }, context, rule)
                     if (rule.playChime) {
-                        if (rule.trigger == AutomationTrigger.POWER_DISCONNECTED || rule.speechPitch < 0.95f) {
-                            SoundSynthesizer.playPowerDisconnectedChime()
-                        } else {
-                            SoundSynthesizer.playPowerConnectedChime()
-                        }
+                        SoundSynthesizer.playSoftBell()
+                        kotlinx.coroutines.delay(700)
                     }
                     VoiceFeedbackManager.speak(
                         context = context,
                         text = textToSpeak,
                         pitch = rule.speechPitch,
                         rate = rule.speechRate,
+                        volume = currentPrefs.voiceStyle.volume,
                         waitForCompletion = true,
                     )
-                    "Voiced aloud: \"$textToSpeak\""
+                    "Spoke \"$textToSpeak\""
                 }
 
                 AutomationAction.SEND_WHATSAPP -> {
@@ -212,7 +206,7 @@ object AutomationEngine {
                     context.startActivity(callIntent)
                     if (rule.targetMessage.isNotBlank()) {
                         val textToSpeak = resolveVariables(rule.targetMessage, context, rule)
-                        VoiceFeedbackManager.speak(context, textToSpeak, rule.speechPitch, rule.speechRate)
+                        VoiceFeedbackManager.speak(context, textToSpeak, rule.speechPitch, rule.speechRate, currentPrefs.voiceStyle.volume)
                     }
                     "Dialer opened for ${rule.contactName.ifBlank { phone }}"
                 }

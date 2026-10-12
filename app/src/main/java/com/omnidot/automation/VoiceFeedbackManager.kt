@@ -56,6 +56,7 @@ object VoiceFeedbackManager {
         text: String,
         pitch: Float = 1.0f,
         rate: Float = 1.0f,
+        volume: Float = 0.8f,
         waitForCompletion: Boolean = false,
     ) = withContext(Dispatchers.Main) {
         val deferred = getOrInitTts(context)
@@ -86,15 +87,17 @@ object VoiceFeedbackManager {
         })
 
         val params = Bundle().apply {
-            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
+            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume.coerceIn(0f, 1f))
         }
 
-        engine.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
+        engine.speak(text, TextToSpeech.QUEUE_ADD, params, utteranceId)
 
         if (waitForCompletion) {
-            withTimeoutOrNull(4000L) {
+            withTimeoutOrNull(timeoutFor(text)) {
                 completionDeferred.await()
             }
         }
     }
+
+    fun timeoutFor(text: String): Long = (2_000L + text.length * 90L).coerceIn(4_000L, 60_000L)
 }
