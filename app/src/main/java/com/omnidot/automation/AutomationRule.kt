@@ -142,6 +142,7 @@ enum class ActionCategory(val label: String) {
     MATRIX("Lockscreen HUD"),
     WEBHOOK("Webhooks & Cloud"),
     SYSTEM("System & Alerts"),
+    CODE("Code"),
 }
 
 enum class AutomationAction(
@@ -150,6 +151,12 @@ enum class AutomationAction(
     val subtitle: String,
     val guideInfo: String,
 ) {
+    RUN_CODE(
+        label = "Run code (JavaScript)",
+        category = ActionCategory.CODE,
+        subtitle = "Write your own logic with the omni toolkit",
+        guideInfo = "Runs your JavaScript with the trigger's details in `event` and phone abilities in `omni`.",
+    ),
     SET_PHONE_ALARM(
         label = "Set phone alarm",
         category = ActionCategory.SYSTEM,
@@ -290,6 +297,8 @@ data class AutomationRule(
     /** WhatsApp trigger: only messages that contain a link. */
     val onlyLinks: Boolean = false,
     val alarmInMinutes: Int = 20,
+    /** JavaScript for RUN_CODE. */
+    val code: String = "",
 ) {
     companion object {
         fun createDefaultChargerConnectedRule(): AutomationRule = AutomationRule(

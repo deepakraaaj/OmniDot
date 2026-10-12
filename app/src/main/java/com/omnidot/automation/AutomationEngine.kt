@@ -33,7 +33,7 @@ import android.speech.tts.TextToSpeech
 
 object AutomationEngine {
 
-    suspend fun execute(context: Context, rule: AutomationRule, event: TriggerEvent? = null): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun execute(context: Context, rule: AutomationRule, event: TriggerEvent? = null, depth: Int = 0): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             val preferencesManager = PreferencesManager(context)
             val currentPrefs = preferencesManager.current()
@@ -157,25 +157,22 @@ object AutomationEngine {
                 }
 
                 AutomationAction.SET_PHONE_ALARM -> {
-                    val at = PhoneAlarmTime.inMinutes(java.time.LocalTime.now(), rule.alarmInMinutes)
-                    val label = resolveVariables(rule.alarmLabel.ifBlank { "Link from {sender}" }, context, rule, event).take(60)
-                    val intent = Intent(android.provider.AlarmClock.ACTION_SET_ALARM)
-                        .putExtra(android.provider.AlarmClock.EXTRA_HOUR, at.hour)
-                        .putExtra(android.provider.AlarmClock.EXTRA_MINUTES, at.minute)
-                        .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, label)
-                        .putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, true)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    try {
-                        context.startActivity(intent)
-                        "Phone alarm set for %02d:%02d".format(at.hour, at.minute)
-                    } catch (e: Exception) {
-                        // No Clock app or a background-start block: fall back to OmniDot's own calm alarm.
-                        com.omnidot.alarm.AlarmScheduler.snooze(
-                            context, AlarmRingService.Ring(rule.id, label, rule.snoozeMinutes, false),
-                            java.time.ZonedDateTime.now().plusMinutes(rule.alarmInMinutes.toLong()),
-                        )
-                        "Calm alarm set for %02d:%02d (Clock app unavailable)".format(at.hour, at.minute)
-                    }
+                    val label = resolveVariables(rule.alarmLabel.ifBlank { "Link from {sender}" }, context, rule, event)
+                    val (time, clock) = PhoneAlarms.set(context, rule.id, rule.alarmInMinutes, label)
+                    if (clock) "Phone alarm set for $time" else "Calm alarm set for $time (Clock app unavailable)"
+                }
+
+                AutomationAction.RUN_CODE -> {
+                    val eventMap = mapOf(
+                        "trigger" to rule.trigger.name,
+                        "sender" to event?.sender.orEmpty(),
+                        "message" to event?.message.orEmpty(),
+                        "link" to event?.link.orEmpty(),
+                        "time" to java.time.LocalTime.now().withNano(0).toString(),
+                    )
+                    val result = com.omnidot.script.ScriptRunner().run(rule.code, eventMap, com.omnidot.script.AndroidOmniApi(context, rule.id, depth))
+                    if (!result.ok) throw RuntimeException(result.error)
+                    result.logs.lastOrNull() ?: "Script finished"
                 }
 
                 AutomationAction.RING_ALARM -> {

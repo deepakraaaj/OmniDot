@@ -85,6 +85,7 @@ class AutomationRepository(private val context: Context) {
                 put("speakGreeting", rule.speakGreeting)
                 put("onlyLinks", rule.onlyLinks)
                 put("alarmInMinutes", rule.alarmInMinutes)
+                put("code", rule.code)
             })
         }
     }.toString()
@@ -123,6 +124,7 @@ class AutomationRepository(private val context: Context) {
                         speakGreeting = item.optBoolean("speakGreeting", true),
                         onlyLinks = item.optBoolean("onlyLinks", false),
                         alarmInMinutes = item.optInt("alarmInMinutes", 20).coerceIn(1, 1440),
+                        code = item.optString("code", ""),
                     ),
                 )
             }

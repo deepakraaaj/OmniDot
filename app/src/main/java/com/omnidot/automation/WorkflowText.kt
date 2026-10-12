@@ -26,6 +26,7 @@ object WorkflowText {
     }
 
     fun doText(rule: AutomationRule): String = when (rule.action) {
+        AutomationAction.RUN_CODE -> rule.code.lines().count { it.isNotBlank() }.let { if (it == 0) "Run your code" else "Run code ($it lines)" }
         AutomationAction.SET_PHONE_ALARM -> "Set phone alarm in ${rule.alarmInMinutes} min"
         AutomationAction.RING_ALARM -> if (rule.alarmLabel.isBlank()) "Ring calm alarm" else "Ring calm alarm \"${rule.alarmLabel}\""
         AutomationAction.SPEAK_TEXT -> if (rule.targetMessage.isBlank()) "Speak your words" else "Speak \"${rule.targetMessage}\""
@@ -78,6 +79,7 @@ object WorkflowText {
                 rule.url.startsWith("http://") || rule.url.startsWith("https://")
             AutomationAction.SHOW_NOTIFICATION -> rule.message.isNotBlank()
             AutomationAction.SET_PHONE_ALARM -> rule.alarmInMinutes in 1..1440
+            AutomationAction.RUN_CODE -> rule.code.isNotBlank()
             else -> true
         }
     }

@@ -226,6 +226,7 @@ private fun ActionFields(
                 Icon(Icons.Rounded.PlayArrow, contentDescription = null); Spacer(Modifier.width(6.dp)); Text("Preview voice")
             }
         }
+        AutomationAction.RUN_CODE -> CodeEditor(code = rule.code, ruleId = rule.id) { onChange(rule.copy(code = it)) }
         AutomationAction.SET_PHONE_ALARM -> {
             Text("Ring after", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
             val options = listOf(5, 10, 20, 30, 60)
