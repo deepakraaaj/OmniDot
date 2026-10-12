@@ -6,6 +6,7 @@ import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -90,10 +91,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import com.omnidot.automation.AutomationAction
 import com.omnidot.automation.AutomationRule
 import com.omnidot.automation.AutomationTrigger
 import com.omnidot.automation.OmniNotificationListenerService
+import com.omnidot.automation.SoundSynthesizer
+import com.omnidot.automation.VoiceFeedbackManager
 import com.omnidot.core.MatrixPreset
 import com.omnidot.ui.theme.DotInactive
 import com.omnidot.ui.theme.MutedText
@@ -345,6 +350,20 @@ private fun WorkflowCard(
                 )
             }
 
+            if (rule.action == AutomationAction.SPEAK_TEXT && rule.targetMessage.isNotBlank()) {
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🗣️ \"${rule.targetMessage}\"", color = OmniOrange, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    if (rule.speechPitch > 1.2f) {
+                        Spacer(Modifier.width(6.dp))
+                        TagChip("ENERGETIC ⚡")
+                    } else if (rule.speechPitch < 0.95f) {
+                        Spacer(Modifier.width(6.dp))
+                        TagChip("DRAMATIC")
+                    }
+                }
+            }
+
             if (rule.lastRunStatus.isNotBlank()) {
                 Spacer(Modifier.height(6.dp))
                 Text("Last: ${rule.lastRunStatus}", color = MutedText, fontSize = 10.sp, maxLines = 1)
@@ -403,9 +422,13 @@ private fun WorkflowEditor(
     var contactName by remember(initialRule?.id) { mutableStateOf(initialRule?.contactName ?: "") }
     var contactPhone by remember(initialRule?.id) { mutableStateOf(initialRule?.contactPhone ?: "") }
     var contactPickerMessage by remember(initialRule?.id) { mutableStateOf<String?>(null) }
-    var targetMessage by remember(initialRule?.id) { mutableStateOf(initialRule?.targetMessage ?: "Hi, I'm Deepak") }
+    var targetMessage by remember(initialRule?.id) { mutableStateOf(initialRule?.targetMessage ?: "YESSS!") }
     var scheduledTime by remember(initialRule?.id) { mutableStateOf(initialRule?.scheduledTime ?: "07:00") }
     var weatherCondition by remember(initialRule?.id) { mutableStateOf(initialRule?.weatherCondition ?: "Rain") }
+    var speechPitch by remember(initialRule?.id) { mutableStateOf(initialRule?.speechPitch ?: 1.0f) }
+    var speechRate by remember(initialRule?.id) { mutableStateOf(initialRule?.speechRate ?: 1.0f) }
+    var playChime by remember(initialRule?.id) { mutableStateOf(initialRule?.playChime ?: true) }
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val contactPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
@@ -482,14 +505,42 @@ private fun WorkflowEditor(
 
             Text("START FROM AN EXAMPLE", color = MutedText, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
             Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        trigger = AutomationTrigger.POWER_CONNECTED
+                        action = AutomationAction.SPEAK_TEXT
+                        targetMessage = "YESSS!"
+                        speechPitch = 1.45f
+                        speechRate = 1.15f
+                        playChime = true
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("⚡ Charger → YES!", fontSize = 11.sp, maxLines = 1)
+                }
+                OutlinedButton(
+                    onClick = {
+                        trigger = AutomationTrigger.POWER_DISCONNECTED
+                        action = AutomationAction.SPEAK_TEXT
+                        targetMessage = "Oh Noo!!"
+                        speechPitch = 0.88f
+                        speechRate = 0.88f
+                        playChime = true
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("🔌 Unplug → Oh Noo!!", fontSize = 11.sp, maxLines = 1)
+                }
                 OutlinedButton(
                     onClick = {
                         trigger = AutomationTrigger.WHATSAPP_MESSAGE
                         action = AutomationAction.CALL_PHONE
                         targetMessage = "Hi, I'm Deepak"
                     },
-                    modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                 ) {
                     Text("Message → call", fontSize = 11.sp, maxLines = 1)
@@ -501,7 +552,6 @@ private fun WorkflowEditor(
                         targetMessage = "Bring an umbrella"
                         scheduledTime = "07:00"
                     },
-                    modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                 ) {
                     Text("Rain → WhatsApp", fontSize = 11.sp, maxLines = 1)
@@ -624,18 +674,135 @@ private fun WorkflowEditor(
                 }
             }
 
-            if (action == AutomationAction.CALL_PHONE || action == AutomationAction.SEND_WHATSAPP ||
-                action == AutomationAction.SPEAK_TEXT
-            ) {
+            if (action == AutomationAction.SPEAK_TEXT) {
                 Spacer(Modifier.height(8.dp))
                 WorkflowTextField(
                     value = targetMessage,
                     onValueChange = { targetMessage = it },
-                    label = when (action) {
-                        AutomationAction.CALL_PHONE -> "Say aloud on this phone"
-                        AutomationAction.SEND_WHATSAPP -> "WhatsApp message"
-                        else -> "Text to speak"
+                    label = "Text to speak aloud",
+                    placeholder = if (trigger == AutomationTrigger.POWER_DISCONNECTED) "Oh Noo!!" else "YESSS!",
+                    minLines = 2,
+                )
+                if (targetMessage.isBlank()) {
+                    Spacer(Modifier.height(6.dp))
+                    WorkflowNotice("Enter words to speak aloud.")
+                }
+                Spacer(Modifier.height(10.dp))
+                Text("VOICE ENERGY & TONE", color = MutedText, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val isEnergetic = speechPitch >= 1.3f
+                    val isNormal = speechPitch in 0.95f..1.2f
+                    val isDramatic = speechPitch < 0.95f
+
+                    OutlinedButton(
+                        onClick = {
+                            speechPitch = 1.45f
+                            speechRate = 1.15f
+                        },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (isEnergetic) OmniOrange.copy(alpha = 0.15f) else Color.Transparent,
+                        ),
+                        border = BorderStroke(1.dp, if (isEnergetic) OmniOrange else DotInactive),
+                        shape = RoundedCornerShape(10.dp),
+                    ) {
+                        Text("⚡ Energetic / Excited", fontSize = 11.sp, color = if (isEnergetic) OmniOrange else Color.White)
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            speechPitch = 1.0f
+                            speechRate = 1.0f
+                        },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (isNormal) OmniOrange.copy(alpha = 0.15f) else Color.Transparent,
+                        ),
+                        border = BorderStroke(1.dp, if (isNormal) OmniOrange else DotInactive),
+                        shape = RoundedCornerShape(10.dp),
+                    ) {
+                        Text("😐 Balanced", fontSize = 11.sp, color = if (isNormal) OmniOrange else Color.White)
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            speechPitch = 0.88f
+                            speechRate = 0.88f
+                        },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (isDramatic) OmniOrange.copy(alpha = 0.15f) else Color.Transparent,
+                        ),
+                        border = BorderStroke(1.dp, if (isDramatic) OmniOrange else DotInactive),
+                        shape = RoundedCornerShape(10.dp),
+                    ) {
+                        Text("😱 Dramatic / Oh No", fontSize = 11.sp, color = if (isDramatic) OmniOrange else Color.White)
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(OledBlack, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Play sound effect / chime", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            if (trigger == AutomationTrigger.POWER_DISCONNECTED || speechPitch < 0.95f)
+                                "Plays descending power-down sound"
+                            else
+                                "Plays bright rising power-up arpeggio",
+                            color = MutedText,
+                            fontSize = 10.sp,
+                        )
+                    }
+                    Switch(
+                        checked = playChime,
+                        onCheckedChange = { playChime = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = OmniOrange,
+                            uncheckedTrackColor = DotInactive,
+                        ),
+                    )
+                }
+
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            if (playChime) {
+                                if (trigger == AutomationTrigger.POWER_DISCONNECTED || speechPitch < 0.95f) {
+                                    SoundSynthesizer.playPowerDisconnectedChime()
+                                } else {
+                                    SoundSynthesizer.playPowerConnectedChime()
+                                }
+                            }
+                            VoiceFeedbackManager.speak(
+                                context = context,
+                                text = targetMessage.ifBlank { if (trigger == AutomationTrigger.POWER_DISCONNECTED) "Oh Noo!!" else "YESSS!" },
+                                pitch = speechPitch,
+                                rate = speechRate,
+                            )
+                        }
                     },
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Rounded.PlayArrow, null, tint = OmniOrange, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("PREVIEW VOICE & CHIME NOW", color = OmniOrange, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            } else if (action == AutomationAction.CALL_PHONE || action == AutomationAction.SEND_WHATSAPP) {
+                Spacer(Modifier.height(8.dp))
+                WorkflowTextField(
+                    value = targetMessage,
+                    onValueChange = { targetMessage = it },
+                    label = if (action == AutomationAction.CALL_PHONE) "Say aloud on this phone" else "WhatsApp message",
                     placeholder = "Hi, I'm Deepak",
                     minLines = 2,
                 )
@@ -644,10 +811,10 @@ private fun WorkflowEditor(
                     WorkflowNotice("Enter a message before saving.")
                 }
                 Spacer(Modifier.height(6.dp))
-                when (action) {
-                    AutomationAction.CALL_PHONE -> WorkflowNotice("OmniDot opens the dialer and speaks this on your phone. Android does not route app speech into the call.")
-                    AutomationAction.SEND_WHATSAPP -> WorkflowNotice("OmniDot opens a prefilled WhatsApp chat. You must tap Send; WhatsApp does not allow silent sending here.")
-                    else -> Unit
+                if (action == AutomationAction.CALL_PHONE) {
+                    WorkflowNotice("OmniDot opens the dialer and speaks this on your phone. Android does not route app speech into the call.")
+                } else {
+                    WorkflowNotice("OmniDot opens a prefilled WhatsApp chat. You must tap Send; WhatsApp does not allow silent sending here.")
                 }
             }
 
@@ -754,6 +921,9 @@ private fun WorkflowEditor(
                 targetMessage,
                 scheduledTime,
                 weatherCondition,
+                speechPitch,
+                speechRate,
+                playChime,
             ) {
                 AutomationRule(
                     id = initialRule?.id ?: java.util.UUID.randomUUID().toString(),
@@ -770,6 +940,9 @@ private fun WorkflowEditor(
                     targetMessage = targetMessage,
                     scheduledTime = scheduledTime,
                     weatherCondition = weatherCondition,
+                    speechPitch = speechPitch,
+                    speechRate = speechRate,
+                    playChime = playChime,
                 )
             }
 
@@ -948,6 +1121,10 @@ private fun workflowName(
         "At $scheduledTime, when rain is forecast → ${action.label.lowercase()}"
     AutomationTrigger.SCHEDULED_TIME ->
         "Every day at $scheduledTime → ${action.label.lowercase()}"
+    AutomationTrigger.POWER_CONNECTED ->
+        if (action == AutomationAction.SPEAK_TEXT) "⚡ Charger: Energetic YES!" else "When charger connected → ${action.label.lowercase()}"
+    AutomationTrigger.POWER_DISCONNECTED ->
+        if (action == AutomationAction.SPEAK_TEXT) "🔌 Unplugged: Oh Noo!!" else "When charger unplugged → ${action.label.lowercase()}"
     else -> "${trigger.label} → ${action.label}"
 }
 

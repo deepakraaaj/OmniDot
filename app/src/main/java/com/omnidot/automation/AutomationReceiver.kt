@@ -19,7 +19,11 @@ class AutomationReceiver : BroadcastReceiver() {
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 val repository = AutomationRepository(context)
-                val rules = repository.current().filter { it.enabled && it.trigger == trigger }
+                var rules = repository.current().filter { it.enabled && it.trigger == trigger }
+                if (rules.isEmpty() && (trigger == AutomationTrigger.POWER_CONNECTED || trigger == AutomationTrigger.POWER_DISCONNECTED)) {
+                    repository.ensureDefaultRules()
+                    rules = repository.current().filter { it.enabled && it.trigger == trigger }
+                }
                 for (rule in rules) {
                     val result = AutomationEngine.execute(context, rule)
                     val statusText = if (result.isSuccess) {

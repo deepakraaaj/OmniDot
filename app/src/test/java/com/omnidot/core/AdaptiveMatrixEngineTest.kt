@@ -17,6 +17,7 @@ class AdaptiveMatrixEngineTest {
         assertEquals(366, state.total)
         assertEquals(366, state.completed)
         assertEquals(18, state.rows)
+        assertEquals(365, state.currentIndex)
     }
 
     @Test
@@ -30,6 +31,20 @@ class AdaptiveMatrixEngineTest {
         )
         assertEquals(4_160, state.total)
         assertEquals(4_160, state.completed)
+        assertEquals(null, state.currentIndex)
+    }
+
+    @Test
+    fun `life matrix marks the current week separately from completed weeks`() {
+        val state = engine.stateFor(
+            OmniDotPreferences(
+                preset = MatrixPreset.LIFE_IN_WEEKS,
+                birthDate = LocalDate.of(2000, 1, 1),
+            ),
+            LocalDate.of(2000, 1, 3),
+        )
+        assertEquals(0, state.completed)
+        assertEquals(0, state.currentIndex)
     }
 
     @Test
@@ -41,6 +56,9 @@ class AdaptiveMatrixEngineTest {
         assertEquals(0, engine.stateFor(settings, LocalDate.of(2026, 4, 19)).completed)
         assertEquals(1, engine.stateFor(settings, LocalDate.of(2026, 4, 20)).completed)
         assertEquals(100, engine.stateFor(settings, LocalDate.of(2027, 1, 1)).completed)
+        assertEquals(null, engine.stateFor(settings, LocalDate.of(2026, 4, 19)).currentIndex)
+        assertEquals(0, engine.stateFor(settings, LocalDate.of(2026, 4, 20)).currentIndex)
+        assertEquals(null, engine.stateFor(settings, LocalDate.of(2027, 1, 1)).currentIndex)
     }
 
     @Test
@@ -52,6 +70,6 @@ class AdaptiveMatrixEngineTest {
         assertEquals(52, state.columns)
         assertEquals(7, state.rows)
         assertEquals(364, state.total)
+        assertEquals(363, state.currentIndex)
     }
 }
-

@@ -27,6 +27,7 @@ class AdaptiveMatrixEngine {
         val columns: Int,
         val rows: Int,
         val label: String,
+        val currentIndex: Int?,
     )
 
     fun stateFor(settings: OmniDotPreferences, today: LocalDate = LocalDate.now()): MatrixState {
@@ -40,23 +41,42 @@ class AdaptiveMatrixEngine {
                     settings.preset.columns,
                     ceil(total / settings.preset.columns.toFloat()).toInt(),
                     if (daysLeft == 1) "1 DAY LEFT" else "$daysLeft DAYS LEFT",
+                    today.dayOfYear - 1,
                 )
             }
             MatrixPreset.LIFE_IN_WEEKS -> {
                 val elapsed = max(0, ChronoUnit.WEEKS.between(settings.birthDate, today).toInt())
-                MatrixState(4_160, min(4_160, elapsed), 52, 80,
-                    "${min(4_160, elapsed)} / 4160 WEEKS")
+                MatrixState(
+                    4_160,
+                    min(4_160, elapsed),
+                    52,
+                    80,
+                    "${min(4_160, elapsed)} / 4160 WEEKS",
+                    elapsed.takeIf { it in 0 until 4_160 && !today.isBefore(settings.birthDate) },
+                )
             }
             MatrixPreset.SPRINT_100 -> {
                 val elapsed = ChronoUnit.DAYS.between(settings.sprintStart, today).toInt() + 1
-                MatrixState(100, elapsed.coerceIn(0, 100), 10, 10,
-                    "${elapsed.coerceIn(0, 100)} / 100 DAYS")
+                MatrixState(
+                    100,
+                    elapsed.coerceIn(0, 100),
+                    10,
+                    10,
+                    "${elapsed.coerceIn(0, 100)} / 100 DAYS",
+                    (elapsed - 1).takeIf { it in 0 until 100 },
+                )
             }
             MatrixPreset.CONTRIBUTION_HEATMAP -> {
                 val yearStart = today.minusDays(363)
                 val completed = ChronoUnit.DAYS.between(yearStart, today).toInt() + 1
-                MatrixState(364, completed.coerceIn(0, 364), 52, 7,
-                    "52 WEEKS · LOCAL ACTIVITY")
+                MatrixState(
+                    364,
+                    completed.coerceIn(0, 364),
+                    52,
+                    7,
+                    "52 WEEKS · LOCAL ACTIVITY",
+                    completed.coerceIn(1, 364) - 1,
+                )
             }
         }
     }
@@ -122,6 +142,7 @@ class AdaptiveMatrixEngine {
 
         val inactive = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = INACTIVE }
         val active = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = settings.accentColor }
+        val current = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = CURRENT_POSITION }
         val radius = max(1f, cell * .24f)
         repeat(state.total) { index ->
             val column: Int
@@ -135,8 +156,13 @@ class AdaptiveMatrixEngine {
             }
             val x = left + column * (cell + gap)
             val y = gridTop + row * (cell + gap)
-            val paint = if (index < state.completed) active else inactive
-            if (settings.preset == MatrixPreset.CONTRIBUTION_HEATMAP && index < state.completed) {
+            val isCurrent = index == state.currentIndex
+            val paint = when {
+                isCurrent -> current
+                index < state.completed -> active
+                else -> inactive
+            }
+            if (!isCurrent && settings.preset == MatrixPreset.CONTRIBUTION_HEATMAP && index < state.completed) {
                 paint.alpha = 100 + deterministicIntensity(index, today) * 38
             } else {
                 paint.alpha = 255
@@ -193,6 +219,6 @@ class AdaptiveMatrixEngine {
         private const val BACKGROUND = -16_119_286 // #FF0A0A0A
         private const val INACTIVE = -14_277_082 // #FF262626
         private const val MUTED_TEXT = -6_579_301 // #FF9B9B9B
+        private const val CURRENT_POSITION = 0xFF40E0D0.toInt()
     }
 }
-

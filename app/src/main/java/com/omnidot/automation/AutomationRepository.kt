@@ -41,6 +41,19 @@ class AutomationRepository(private val context: Context) {
 
     suspend fun delete(id: String) = update { existing -> existing.filterNot { it.id == id } }
 
+    suspend fun ensureDefaultRules() = update { existing ->
+        if (existing.isEmpty()) {
+            defaultRules()
+        } else {
+            val hasConnected = existing.any { it.trigger == AutomationTrigger.POWER_CONNECTED }
+            val hasDisconnected = existing.any { it.trigger == AutomationTrigger.POWER_DISCONNECTED }
+            val toAdd = mutableListOf<AutomationRule>()
+            if (!hasConnected) toAdd.add(AutomationRule.createDefaultChargerConnectedRule())
+            if (!hasDisconnected) toAdd.add(AutomationRule.createDefaultChargerDisconnectedRule())
+            if (toAdd.isNotEmpty()) existing + toAdd else existing
+        }
+    }
+
     private suspend fun update(transform: (List<AutomationRule>) -> List<AutomationRule>) {
         context.automationDataStore.edit { values ->
             values[rulesKey] = encode(transform(decode(values[rulesKey].orEmpty())))
@@ -66,13 +79,16 @@ class AutomationRepository(private val context: Context) {
                 put("customPayload", rule.customPayload)
                 put("lastRunTime", rule.lastRunTime)
                 put("lastRunStatus", rule.lastRunStatus)
+                put("speechPitch", rule.speechPitch.toDouble())
+                put("speechRate", rule.speechRate.toDouble())
+                put("playChime", rule.playChime)
             })
         }
     }.toString()
 
     private fun decode(raw: String): List<AutomationRule> = runCatching {
         val array = if (raw.isBlank()) JSONArray() else JSONArray(raw)
-        buildList {
+        val decoded = buildList {
             repeat(array.length()) { index ->
                 val item = array.getJSONObject(index)
                 add(
@@ -93,9 +109,20 @@ class AutomationRepository(private val context: Context) {
                         customPayload = item.optString("customPayload", ""),
                         lastRunTime = item.optLong("lastRunTime", 0L),
                         lastRunStatus = item.optString("lastRunStatus", ""),
+                        speechPitch = item.optDouble("speechPitch", 1.0).toFloat(),
+                        speechRate = item.optDouble("speechRate", 1.0).toFloat(),
+                        playChime = item.optBoolean("playChime", true),
                     ),
                 )
             }
         }
-    }.getOrDefault(emptyList())
+        if (decoded.isEmpty()) defaultRules() else decoded
+    }.getOrDefault(defaultRules())
+
+    companion object {
+        fun defaultRules(): List<AutomationRule> = listOf(
+            AutomationRule.createDefaultChargerConnectedRule(),
+            AutomationRule.createDefaultChargerDisconnectedRule(),
+        )
+    }
 }

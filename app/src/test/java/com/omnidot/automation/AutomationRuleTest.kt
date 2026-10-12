@@ -69,4 +69,22 @@ class AutomationRuleTest {
         assertEquals(AutomationTrigger.POWER_CONNECTED, rule.trigger)
         assertEquals(AutomationAction.SHOW_NOTIFICATION, rule.action)
     }
+
+    @Test
+    fun `default charger connected and disconnected rules are configured for energetic and dramatic feedback`() {
+        val connectedRule = AutomationRule.createDefaultChargerConnectedRule()
+        assertEquals(AutomationTrigger.POWER_CONNECTED, connectedRule.trigger)
+        assertEquals(AutomationAction.SPEAK_TEXT, connectedRule.action)
+        assertEquals("YESSS!", connectedRule.targetMessage)
+        assertTrue("Speech pitch should be energetic (> 1.2f)", connectedRule.speechPitch > 1.2f)
+        assertTrue("Speech rate should be upbeat (>= 1.1f)", connectedRule.speechRate >= 1.1f)
+        assertTrue("Chime should be enabled", connectedRule.playChime)
+
+        val disconnectedRule = AutomationRule.createDefaultChargerDisconnectedRule()
+        assertEquals(AutomationTrigger.POWER_DISCONNECTED, disconnectedRule.trigger)
+        assertEquals(AutomationAction.SPEAK_TEXT, disconnectedRule.action)
+        assertEquals("Oh Noo!!", disconnectedRule.targetMessage)
+        assertTrue("Speech pitch should be lower/dramatic (< 1.0f)", disconnectedRule.speechPitch < 1.0f)
+        assertTrue("Chime should be enabled", disconnectedRule.playChime)
+    }
 }

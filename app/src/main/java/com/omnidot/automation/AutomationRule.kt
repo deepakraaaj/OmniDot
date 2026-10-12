@@ -241,4 +241,33 @@ data class AutomationRule(
     val customPayload: String = "",
     val lastRunTime: Long = 0L,
     val lastRunStatus: String = "",
-)
+    val speechPitch: Float = 1.0f,
+    val speechRate: Float = 1.0f,
+    val playChime: Boolean = true,
+) {
+    companion object {
+        fun createDefaultChargerConnectedRule(): AutomationRule = AutomationRule(
+            id = "default_charger_connected",
+            name = "⚡ Charger: Energetic YES!",
+            enabled = true,
+            trigger = AutomationTrigger.POWER_CONNECTED,
+            action = AutomationAction.SPEAK_TEXT,
+            targetMessage = "YESSS!",
+            speechPitch = 1.45f,
+            speechRate = 1.15f,
+            playChime = true,
+        )
+
+        fun createDefaultChargerDisconnectedRule(): AutomationRule = AutomationRule(
+            id = "default_charger_disconnected",
+            name = "🔌 Unplugged: Oh Noo!!",
+            enabled = true,
+            trigger = AutomationTrigger.POWER_DISCONNECTED,
+            action = AutomationAction.SPEAK_TEXT,
+            targetMessage = "Oh Noo!!",
+            speechPitch = 0.88f,
+            speechRate = 0.88f,
+            playChime = true,
+        )
+    }
+}

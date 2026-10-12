@@ -17,7 +17,9 @@ import androidx.core.app.NotificationCompat
 import com.omnidot.core.AdaptiveMatrixEngine
 import com.omnidot.core.MatrixPreset
 import com.omnidot.data.PreferencesManager
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -159,7 +161,20 @@ object AutomationEngine {
                         context,
                         rule,
                     )
-                    speakText(context, textToSpeak)
+                    if (rule.playChime) {
+                        if (rule.trigger == AutomationTrigger.POWER_DISCONNECTED || rule.speechPitch < 0.95f) {
+                            SoundSynthesizer.playPowerDisconnectedChime()
+                        } else {
+                            SoundSynthesizer.playPowerConnectedChime()
+                        }
+                    }
+                    VoiceFeedbackManager.speak(
+                        context = context,
+                        text = textToSpeak,
+                        pitch = rule.speechPitch,
+                        rate = rule.speechRate,
+                        waitForCompletion = true,
+                    )
                     "Voiced aloud: \"$textToSpeak\""
                 }
 
@@ -197,7 +212,7 @@ object AutomationEngine {
                     context.startActivity(callIntent)
                     if (rule.targetMessage.isNotBlank()) {
                         val textToSpeak = resolveVariables(rule.targetMessage, context, rule)
-                        speakText(context, textToSpeak)
+                        VoiceFeedbackManager.speak(context, textToSpeak, rule.speechPitch, rule.speechRate)
                     }
                     "Dialer opened for ${rule.contactName.ifBlank { phone }}"
                 }
@@ -346,14 +361,9 @@ object AutomationEngine {
         return "OmniDot · Day $dayOfYear/$totalDays ($yearPercent%) · ${preset.title}"
     }
 
-    fun speakText(context: Context, text: String) {
-        val appContext = context.applicationContext
-        var tts: TextToSpeech? = null
-        tts = TextToSpeech(appContext) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale.getDefault()
-                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "omnidot_tts_${System.currentTimeMillis()}")
-            }
+    fun speakText(context: Context, text: String, pitch: Float = 1.0f, rate: Float = 1.0f) {
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+            VoiceFeedbackManager.speak(context, text, pitch, rate)
         }
     }
 }

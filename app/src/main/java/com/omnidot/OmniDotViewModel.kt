@@ -47,6 +47,7 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         viewModelScope.launch {
+            automationRepository.ensureDefaultRules()
             if (preferencesManager.current().automaticUpdates) {
                 MatrixSyncWorker.scheduleNext(application)
             }
