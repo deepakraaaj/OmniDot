@@ -23,7 +23,7 @@ object WorkflowText {
     }
 
     fun doText(rule: AutomationRule): String = when (rule.action) {
-        AutomationAction.SPEAK_TEXT -> "Speak \"${rule.targetMessage}\""
+        AutomationAction.SPEAK_TEXT -> if (rule.targetMessage.isBlank()) "Speak your words" else "Speak \"${rule.targetMessage}\""
         AutomationAction.SEND_WHATSAPP -> "Open WhatsApp to ${rule.contactName.ifBlank { "a contact" }}"
         AutomationAction.CALL_PHONE -> "Open dialer for ${rule.contactName.ifBlank { "a contact" }}"
         AutomationAction.APPLY_PRESET -> "Show ${rule.preset.title} on lock screen"

@@ -36,6 +36,7 @@ data class OmniDotPreferences(
     val reminderConfigured: Boolean = false,
     val reminderMinuteOfDay: Int = 21 * 60,
     val voiceStyle: VoiceStyle = VoiceStyle.CALM,
+    val reminderLastNotifiedDay: Long? = null,
 )
 
 class PreferencesManager(private val context: Context) {
@@ -52,6 +53,7 @@ class PreferencesManager(private val context: Context) {
         val reminderMinute = intPreferencesKey("reminder_minute_of_day")
         val voiceStyle = stringPreferencesKey("voice_style")
         val remoteKey = stringPreferencesKey("remote_trigger_key")
+        val reminderLastNotified = longPreferencesKey("reminder_last_notified_day")
     }
 
     val preferences: Flow<OmniDotPreferences> = context.omniDotDataStore.data.map { values ->
@@ -69,6 +71,7 @@ class PreferencesManager(private val context: Context) {
             reminderConfigured = values[Keys.reminderEnabled] != null,
             reminderMinuteOfDay = (values[Keys.reminderMinute] ?: defaults.reminderMinuteOfDay).coerceIn(0, 1439),
             voiceStyle = VoiceStyle.fromStored(values[Keys.voiceStyle]),
+            reminderLastNotifiedDay = values[Keys.reminderLastNotified],
         )
     }
 
@@ -85,6 +88,7 @@ class PreferencesManager(private val context: Context) {
     suspend fun setReminder(enabled: Boolean) = edit { it[Keys.reminderEnabled] = enabled }
     suspend fun setReminderMinuteOfDay(minute: Int) = edit { it[Keys.reminderMinute] = minute.coerceIn(0, 1439) }
     suspend fun setVoiceStyle(style: VoiceStyle) = edit { it[Keys.voiceStyle] = style.name }
+    suspend fun setReminderLastNotified(day: LocalDate) = edit { it[Keys.reminderLastNotified] = day.toEpochDay() }
 
     suspend fun remoteKey(): String {
         var key = ""

@@ -14,4 +14,12 @@ class WorkflowRecipesTest {
             assertTrue(recipe.title, WorkflowText.canSave(rule))
         }
     }
+
+    @Test
+    fun `suggestions hide recipes the user already has`() {
+        val charging = WorkflowRecipes.all.first().build()
+        val remaining = WorkflowRecipes.suggestions(listOf(charging.copy(id = "mine", targetMessage = "Plugged in")))
+        assertEquals(WorkflowRecipes.all.size - 1, remaining.size)
+        assertEquals(WorkflowRecipes.all, WorkflowRecipes.suggestions(emptyList()))
+    }
 }

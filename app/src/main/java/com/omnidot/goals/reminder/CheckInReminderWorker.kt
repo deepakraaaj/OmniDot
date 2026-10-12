@@ -14,11 +14,18 @@ import java.util.concurrent.TimeUnit
 
 class CheckInReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
-        val settings = PreferencesManager(applicationContext).current()
+        val preferences = PreferencesManager(applicationContext)
+        val settings = preferences.current()
         if (!settings.reminderEnabled) return Result.success()
         schedule(applicationContext, settings.reminderMinuteOfDay)
         val today = LocalDate.now()
-        CheckInNotifier.show(applicationContext, ReminderSchedule.pendingToday(GoalRepository(applicationContext).current(), today), today)
+        // A run a few seconds early (clock adjustments) reschedules for later today; never alert twice.
+        if (!ReminderSchedule.shouldNotify(settings.reminderLastNotifiedDay, today)) return Result.success()
+        val pending = ReminderSchedule.pendingToday(GoalRepository(applicationContext).current(), today)
+        if (pending.isNotEmpty()) {
+            CheckInNotifier.show(applicationContext, pending, today)
+            preferences.setReminderLastNotified(today)
+        }
         return Result.success()
     }
 

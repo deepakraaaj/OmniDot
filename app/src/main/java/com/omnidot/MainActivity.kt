@@ -43,7 +43,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        handleDeepLink(intent)
+        // Only on a fresh launch: a rotation or recreate must not run the same link again.
+        if (savedInstanceState == null) handleDeepLink(intent)
         val initialTab = if (intent?.getStringExtra(EXTRA_OPEN_TAB) == "goals") AppTab.GOALS else AppTab.WORKFLOWS
         setContent {
             OmniDotTheme {
@@ -59,6 +60,7 @@ class MainActivity : ComponentActivity() {
                             val prefs by viewModel.preferences.collectAsStateWithLifecycle()
                             WorkflowEditor(
                                 initial = editing,
+                                isEdit = automations.any { it.id == editing?.id },
                                 defaultVoice = prefs.voiceStyle,
                                 onClose = { editorOpen = false },
                                 onSave = {

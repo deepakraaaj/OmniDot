@@ -44,4 +44,12 @@ class ReminderScheduleTest {
         )
         assertEquals(listOf("a"), ReminderSchedule.pendingToday(goals, today).map { it.id })
     }
+
+    @Test
+    fun `reminder notifies at most once per day`() {
+        val today = LocalDate.of(2026, 10, 12)
+        assertEquals(true, ReminderSchedule.shouldNotify(null, today))
+        assertEquals(true, ReminderSchedule.shouldNotify(today.minusDays(1).toEpochDay(), today))
+        assertEquals(false, ReminderSchedule.shouldNotify(today.toEpochDay(), today))
+    }
 }

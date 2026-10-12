@@ -94,9 +94,25 @@ fun WorkflowsScreen(
                     }
                 }
             }
-            if (rules.isEmpty()) {
-                item { SectionHeader("Start with a recipe") }
-                items(WorkflowRecipes.all, key = { it.title }) { recipe ->
+            items(rules, key = { it.id }) { rule ->
+                WorkflowCard(
+                    rule = rule, nowMillis = now,
+                    onEnabledChanged = { onEnabledChanged(rule.id, it) },
+                    onEdit = { onOpenEditor(rule) },
+                    onTest = { onTest(rule) },
+                    onDelete = {
+                        onDelete(rule)
+                        scope.launch {
+                            val result = snackbar.showSnackbar("Workflow deleted", actionLabel = "Undo", withDismissAction = true)
+                            if (result == SnackbarResult.ActionPerformed) onRestore(rule)
+                        }
+                    },
+                )
+            }
+            val suggestions = WorkflowRecipes.suggestions(rules)
+            if (suggestions.isNotEmpty()) {
+                item { SectionHeader(if (rules.isEmpty()) "Start with a recipe" else "More ideas") }
+                items(suggestions, key = { it.title }) { recipe ->
                     Surface(
                         Modifier.fillMaxWidth().clickable { onOpenEditor(recipe.build()) },
                         shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface,
@@ -106,22 +122,6 @@ fun WorkflowsScreen(
                             Text(recipe.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                }
-            } else {
-                items(rules, key = { it.id }) { rule ->
-                    WorkflowCard(
-                        rule = rule, nowMillis = now,
-                        onEnabledChanged = { onEnabledChanged(rule.id, it) },
-                        onEdit = { onOpenEditor(rule) },
-                        onTest = { onTest(rule) },
-                        onDelete = {
-                            onDelete(rule)
-                            scope.launch {
-                                val result = snackbar.showSnackbar("Workflow deleted", actionLabel = "Undo", withDismissAction = true)
-                                if (result == SnackbarResult.ActionPerformed) onRestore(rule)
-                            }
-                        },
-                    )
                 }
             }
         }

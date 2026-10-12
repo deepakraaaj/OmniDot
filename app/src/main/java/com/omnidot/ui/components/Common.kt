@@ -7,9 +7,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -46,9 +46,10 @@ fun SurfaceCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.
 
 @Composable
 fun PhonePreview(bitmap: ImageBitmap, modifier: Modifier = Modifier) {
+    val ratio = bitmap.width.toFloat() / bitmap.height
     Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Box(
-            Modifier.width(200.dp).height(416.dp).clip(RoundedCornerShape(28.dp))
+            Modifier.fillMaxWidth(0.55f).widthIn(max = 240.dp).aspectRatio(ratio).clip(RoundedCornerShape(28.dp))
                 .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(28.dp)),
         ) {
             Image(bitmap, contentDescription = "Lock screen preview", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.FillBounds)

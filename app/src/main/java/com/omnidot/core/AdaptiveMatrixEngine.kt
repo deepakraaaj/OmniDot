@@ -8,10 +8,10 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
+import android.hardware.display.DisplayManager
 import android.os.Build
-import android.util.DisplayMetrics
 import android.util.Size
-import android.view.WindowManager
+import android.view.Display
 import com.omnidot.data.OmniDotPreferences
 import com.omnidot.goals.DayState
 import com.omnidot.goals.Goal
@@ -237,17 +237,16 @@ class AdaptiveMatrixEngine {
         }
     }
 
-    @Suppress("DEPRECATION")
+    /** Lock screen wallpapers are portrait; normalise whatever orientation the display reports. */
+    internal fun portraitSize(width: Int, height: Int): Pair<Int, Int> = minOf(width, height) to maxOf(width, height)
+
+    // Read the panel from DisplayManager rather than WindowManager: it works from workers and
+    // receivers (non-visual contexts), and is independent of split-screen or the current rotation.
     private fun physicalDisplaySize(context: Context): Size {
-        val windowManager = context.getSystemService(WindowManager::class.java)
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val bounds = windowManager.currentWindowMetrics.bounds
-            Size(bounds.width(), bounds.height())
-        } else {
-            val metrics = DisplayMetrics()
-            windowManager.defaultDisplay.getRealMetrics(metrics)
-            Size(metrics.widthPixels, metrics.heightPixels)
-        }
+        val display = context.getSystemService(DisplayManager::class.java).getDisplay(Display.DEFAULT_DISPLAY)
+        val mode = display.mode
+        val (w, h) = portraitSize(mode.physicalWidth, mode.physicalHeight)
+        return Size(w, h)
     }
 
     companion object {

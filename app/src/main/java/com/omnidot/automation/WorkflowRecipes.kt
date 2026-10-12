@@ -14,4 +14,10 @@ object WorkflowRecipes {
             AutomationRule(name = "", trigger = AutomationTrigger.HEADSET_PLUG, action = AutomationAction.SPEAK_TEXT, targetMessage = "Enjoy your music")
         },
     ).map { recipe -> recipe.copy(build = { recipe.build().let { it.copy(name = WorkflowText.name(it)) } }) }
+
+    /** Recipes whose trigger and action the user doesn't already have a workflow for. */
+    fun suggestions(rules: List<AutomationRule>): List<Recipe> = all.filter { recipe ->
+        val r = recipe.build()
+        rules.none { it.trigger == r.trigger && it.action == r.action }
+    }
 }

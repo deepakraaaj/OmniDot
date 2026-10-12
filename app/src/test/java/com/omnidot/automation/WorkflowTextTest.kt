@@ -41,4 +41,10 @@ class WorkflowTextTest {
         assertTrue(WorkflowText.canSave(rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.VIBRATE)))
         assertFalse(WorkflowText.canSave(rule(AutomationTrigger.SCHEDULED_TIME, AutomationAction.VIBRATE)))
     }
+
+    @Test
+    fun `blank speak text reads as a prompt not empty quotes`() {
+        val r = rule(AutomationTrigger.POWER_CONNECTED, AutomationAction.SPEAK_TEXT)
+        assertEquals("Speak your words", WorkflowText.doText(r))
+    }
 }

@@ -6,7 +6,8 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BatteryAlert
 import androidx.compose.material.icons.rounded.BatteryFull
-import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Call
+import androidx.compose.material.icons.rounded.Power
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CloudUpload
@@ -40,7 +41,7 @@ internal fun triggerIcon(trigger: AutomationTrigger): ImageVector = when (trigge
     AutomationTrigger.WHATSAPP_MESSAGE -> Icons.Rounded.Forum
     AutomationTrigger.WEATHER_RAIN -> Icons.Rounded.CloudUpload
     AutomationTrigger.SCHEDULED_TIME -> Icons.Rounded.Schedule
-    AutomationTrigger.POWER_CONNECTED -> Icons.Rounded.Bolt
+    AutomationTrigger.POWER_CONNECTED -> Icons.Rounded.Power
     AutomationTrigger.POWER_DISCONNECTED -> Icons.Rounded.PowerOff
     AutomationTrigger.BATTERY_LOW -> Icons.Rounded.BatteryAlert
     AutomationTrigger.BATTERY_OKAY -> Icons.Rounded.BatteryFull
@@ -56,7 +57,7 @@ internal fun triggerIcon(trigger: AutomationTrigger): ImageVector = when (trigge
 internal fun actionIcon(action: AutomationAction): ImageVector = when (action) {
     AutomationAction.SPEAK_TEXT -> Icons.Rounded.Info
     AutomationAction.SEND_WHATSAPP -> Icons.Rounded.Forum
-    AutomationAction.CALL_PHONE -> Icons.Rounded.Bolt
+    AutomationAction.CALL_PHONE -> Icons.Rounded.Call
     AutomationAction.APPLY_PRESET -> Icons.Rounded.Wallpaper
     AutomationAction.REFRESH_CURRENT -> Icons.Rounded.Refresh
     AutomationAction.CYCLE_PRESET -> Icons.Rounded.Sync

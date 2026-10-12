@@ -22,12 +22,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.omnidot.automation.*
 import com.omnidot.core.MatrixPreset
+import com.omnidot.ui.MaxContentWidth
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkflowEditor(
     initial: AutomationRule?,
+    isEdit: Boolean,
     defaultVoice: VoiceStyle,
     onClose: () -> Unit,
     onSave: (AutomationRule) -> Unit,
@@ -35,7 +37,6 @@ fun WorkflowEditor(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val isEdit = initial != null && initial.name.isNotBlank()
     var rule by remember {
         mutableStateOf(initial ?: AutomationRule(
             name = "", trigger = AutomationTrigger.POWER_CONNECTED, action = AutomationAction.SPEAK_TEXT,
@@ -75,20 +76,20 @@ fun WorkflowEditor(
         },
         bottomBar = {
             Surface(tonalElevation = 2.dp) {
-                Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(onClick = { onTest(rule) }, modifier = Modifier.weight(1f).height(52.dp)) {
+                Row(Modifier.fillMaxWidth().wrapContentWidth().widthIn(max = MaxContentWidth).navigationBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(onClick = { onTest(rule) }, enabled = WorkflowText.canSave(rule), modifier = Modifier.weight(1f).heightIn(min = 52.dp)) {
                         Icon(Icons.Rounded.PlayArrow, contentDescription = null); Spacer(Modifier.width(6.dp)); Text("Test")
                     }
                     Button(
                         onClick = { onSave(rule.copy(name = WorkflowText.name(rule))) },
                         enabled = WorkflowText.canSave(rule),
-                        modifier = Modifier.weight(1f).height(52.dp),
+                        modifier = Modifier.weight(1f).heightIn(min = 52.dp),
                     ) { Text("Save") }
                 }
             }
         },
     ) { padding ->
-        Column(Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+        Column(Modifier.padding(padding).fillMaxSize().wrapContentWidth().widthIn(max = MaxContentWidth).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Text("When", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
             ChoiceRow(triggerIcon(rule.trigger), WorkflowText.whenText(rule), rule.trigger.subtitle) { sheet = "trigger" }
             if (rule.trigger.needsAppAlive) Note("Works while OmniDot is running. Background reliability comes in the next update.")

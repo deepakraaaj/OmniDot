@@ -34,4 +34,11 @@ class GoalCodecTest {
         assertEquals("🌱", decoded[0].emoji)
         assertEquals(setOf(LocalDate.of(2026, 10, 2)), decoded[0].checkIns)
     }
+
+    @Test
+    fun `only unparseable non-empty blobs count as corrupt`() {
+        assertEquals(false, GoalCodec.isCorrupt(""))
+        assertEquals(false, GoalCodec.isCorrupt("[]"))
+        assertEquals(true, GoalCodec.isCorrupt("{broken"))
+    }
 }

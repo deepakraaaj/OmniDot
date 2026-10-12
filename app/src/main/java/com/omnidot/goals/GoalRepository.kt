@@ -25,6 +25,11 @@ class GoalRepository(private val context: Context) {
         update { GoalListOps.setCheckIn(it, id, date, done, today) }
 
     private suspend fun update(transform: (List<Goal>) -> List<Goal>) {
-        context.goalDataStore.edit { it[key] = GoalCodec.encode(transform(GoalCodec.decode(it[key].orEmpty()))) }
+        context.goalDataStore.edit { values ->
+            val raw = values[key].orEmpty()
+            // Keep an unreadable blob aside instead of silently overwriting it with an empty list.
+            if (GoalCodec.isCorrupt(raw)) values[stringPreferencesKey("goals_json_corrupt_${System.currentTimeMillis()}")] = raw
+            values[key] = GoalCodec.encode(transform(GoalCodec.decode(raw)))
+        }
     }
 }

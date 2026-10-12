@@ -56,4 +56,10 @@ class AdaptiveMatrixEngineTest {
         assertTrue(g.top > 2400 * 0.3f)
         assertTrue(g.top + 6 * g.cell + 5 * g.gap < 2400f)
     }
+
+    @Test
+    fun `lock screen bitmap is always portrait`() {
+        assertEquals(1080 to 2400, engine.portraitSize(2400, 1080))
+        assertEquals(1080 to 2400, engine.portraitSize(1080, 2400))
+    }
 }

@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.omnidot.goals.EmojiInput
 import com.omnidot.goals.Goal
 import com.omnidot.goals.GoalTier
 import java.time.LocalDate
@@ -40,7 +41,7 @@ fun GoalEditorSheet(initial: Goal?, onDismiss: () -> Unit, onSave: (Goal) -> Uni
         Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(if (initial == null) "New goal" else "Edit goal", style = MaterialTheme.typography.titleLarge)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(emoji, { emoji = it.take(8) }, label = { Text("Icon") }, singleLine = true, modifier = Modifier.width(88.dp))
+                OutlinedTextField(emoji, { emoji = EmojiInput.sanitize(it) }, label = { Text("Icon") }, singleLine = true, modifier = Modifier.width(88.dp))
                 OutlinedTextField(title, { title = it.take(60) }, label = { Text("Goal") }, placeholder = { Text("Run 5 km") }, singleLine = true, modifier = Modifier.weight(1f))
             }
             Text("Size", style = MaterialTheme.typography.labelLarge)
@@ -59,7 +60,7 @@ fun GoalEditorSheet(initial: Goal?, onDismiss: () -> Unit, onSave: (Goal) -> Uni
                         Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(t.defaultEmoji, style = MaterialTheme.typography.headlineSmall)
                             TierShape(t, 14.dp, Modifier.padding(vertical = 6.dp))
-                            Text(t.label, style = MaterialTheme.typography.labelLarge)
+                            Text(t.label, style = MaterialTheme.typography.labelLarge, maxLines = 1, softWrap = false)
                         }
                     }
                 }
@@ -79,7 +80,7 @@ fun GoalEditorSheet(initial: Goal?, onDismiss: () -> Unit, onSave: (Goal) -> Uni
                         .copy(title = title.trim(), emoji = emoji.ifBlank { tier.defaultEmoji }, tier = tier, startDate = start, endDate = end))
                 },
                 enabled = title.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             ) { Text("Save goal") }
         }
     }

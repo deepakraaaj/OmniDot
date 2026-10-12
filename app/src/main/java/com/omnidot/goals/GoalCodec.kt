@@ -20,6 +20,9 @@ object GoalCodec {
         }
     }.toString()
 
+    /** True when [raw] holds data that cannot be parsed at all (as opposed to empty or partly bad). */
+    fun isCorrupt(raw: String): Boolean = raw.isNotBlank() && runCatching { JSONArray(raw) }.isFailure
+
     fun decode(raw: String): List<Goal> {
         if (raw.isBlank()) return emptyList()
         val array = runCatching { JSONArray(raw) }.getOrNull() ?: return emptyList()

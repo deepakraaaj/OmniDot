@@ -16,4 +16,7 @@ object ReminderSchedule {
 
     fun pendingToday(goals: List<Goal>, today: LocalDate): List<Goal> =
         goals.filter { it.activeOn(today) && today !in it.checkIns }
+
+    fun shouldNotify(lastNotifiedEpochDay: Long?, today: LocalDate): Boolean =
+        lastNotifiedEpochDay != today.toEpochDay()
 }
