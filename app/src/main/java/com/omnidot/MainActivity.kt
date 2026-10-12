@@ -2,7 +2,6 @@ package com.omnidot
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -18,7 +17,9 @@ import com.omnidot.automation.AutomationAction
 import com.omnidot.automation.AutomationEngine
 import com.omnidot.automation.AutomationRule
 import com.omnidot.automation.AutomationTrigger
+import com.omnidot.automation.RemoteTriggerGuard
 import com.omnidot.core.MatrixPreset
+import com.omnidot.data.PreferencesManager
 import com.omnidot.ui.AppTab
 import com.omnidot.ui.AutomationScreen
 import com.omnidot.ui.OmniDotApp
@@ -78,6 +79,8 @@ class MainActivity : ComponentActivity() {
         val uri = intent?.data ?: return
         if (uri.scheme == "omnidot") {
             lifecycleScope.launch {
+                val expected = PreferencesManager(this@MainActivity).remoteKey()
+                if (!RemoteTriggerGuard.isAuthorized(uri.getQueryParameter("key"), expected)) return@launch
                 val actionParam = uri.getQueryParameter("action") ?: uri.host
                 val presetParam = uri.getQueryParameter("preset")
                 val rule = AutomationRule(
@@ -92,8 +95,7 @@ class MainActivity : ComponentActivity() {
                     },
                     preset = MatrixPreset.fromStored(presetParam?.uppercase()),
                 )
-                val result = AutomationEngine.execute(this@MainActivity, rule)
-                Toast.makeText(this@MainActivity, "OmniDot Remote: ${result.getOrNull() ?: result.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                AutomationEngine.execute(this@MainActivity, rule)
             }
         }
     }

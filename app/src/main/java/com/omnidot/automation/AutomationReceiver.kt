@@ -7,6 +7,7 @@ import android.content.IntentFilter
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
+import com.omnidot.data.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,6 +20,9 @@ class AutomationReceiver : BroadcastReceiver() {
 
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
+                if (intent?.action == ACTION_REMOTE_TRIGGER &&
+                    !RemoteTriggerGuard.isAuthorized(intent.getStringExtra("key"), PreferencesManager(context).remoteKey())
+                ) return@launch
                 val repository = AutomationRepository(context)
                 val rules = repository.current().filter { it.enabled && it.trigger == trigger && it.trigger.available }
                 for (rule in rules) {
@@ -51,7 +55,7 @@ class AutomationReceiver : BroadcastReceiver() {
                 if (isWifiConnected(context)) AutomationTrigger.WIFI_CONNECTED
                 else AutomationTrigger.WIFI_DISCONNECTED
             }
-            "com.omnidot.TRIGGER_ACTION" -> {
+            ACTION_REMOTE_TRIGGER -> {
                 val triggerExtra = intent.getStringExtra("trigger")
                 if (!triggerExtra.isNullOrBlank()) {
                     AutomationTrigger.fromStored(triggerExtra)
@@ -78,6 +82,8 @@ class AutomationReceiver : BroadcastReceiver() {
     }
 
     companion object {
+        const val ACTION_REMOTE_TRIGGER = "com.omnidot.TRIGGER_ACTION"
+
         fun deviceEventFilter(): IntentFilter = IntentFilter().apply {
             addAction(Intent.ACTION_POWER_CONNECTED)
             addAction(Intent.ACTION_POWER_DISCONNECTED)

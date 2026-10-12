@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.omnidot.automation.RemoteTriggerGuard
 import com.omnidot.automation.VoiceStyle
 import com.omnidot.core.LockPeriod
 import com.omnidot.core.MatrixPreset
@@ -82,7 +83,19 @@ class PreferencesManager(private val context: Context) {
     suspend fun setReminderMinuteOfDay(minute: Int) = edit { it[Keys.reminderMinute] = minute.coerceIn(0, 1439) }
     suspend fun setVoiceStyle(style: VoiceStyle) = edit { it[Keys.voiceStyle] = style.name }
 
-    suspend fun remoteKey(): String = context.omniDotDataStore.data.first()[Keys.remoteKey].orEmpty()
+    suspend fun remoteKey(): String {
+        var key = ""
+        context.omniDotDataStore.edit { values ->
+            key = values[Keys.remoteKey] ?: RemoteTriggerGuard.newKey().also { values[Keys.remoteKey] = it }
+        }
+        return key
+    }
+
+    suspend fun regenerateRemoteKey(): String {
+        val key = RemoteTriggerGuard.newKey()
+        edit { it[Keys.remoteKey] = key }
+        return key
+    }
 
     private suspend fun edit(block: (MutablePreferences) -> Unit) {
         context.omniDotDataStore.edit { block(it) }
