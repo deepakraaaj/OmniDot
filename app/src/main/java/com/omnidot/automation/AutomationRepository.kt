@@ -1,6 +1,7 @@
 package com.omnidot.automation
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -15,6 +16,7 @@ private val Context.automationDataStore by preferencesDataStore(name = "omnidot_
 
 class AutomationRepository(private val context: Context) {
     private val rulesKey = stringPreferencesKey("rules_json")
+    private val seededKey = booleanPreferencesKey("defaults_seeded")
 
     val rules: Flow<List<AutomationRule>> = context.automationDataStore.data.map { values ->
         decode(values[rulesKey].orEmpty())
@@ -41,16 +43,11 @@ class AutomationRepository(private val context: Context) {
 
     suspend fun delete(id: String) = update { existing -> existing.filterNot { it.id == id } }
 
-    suspend fun ensureDefaultRules() = update { existing ->
-        if (existing.isEmpty()) {
-            defaultRules()
-        } else {
-            val hasConnected = existing.any { it.trigger == AutomationTrigger.POWER_CONNECTED }
-            val hasDisconnected = existing.any { it.trigger == AutomationTrigger.POWER_DISCONNECTED }
-            val toAdd = mutableListOf<AutomationRule>()
-            if (!hasConnected) toAdd.add(AutomationRule.createDefaultChargerConnectedRule())
-            if (!hasDisconnected) toAdd.add(AutomationRule.createDefaultChargerDisconnectedRule())
-            if (toAdd.isNotEmpty()) existing + toAdd else existing
+    suspend fun ensureDefaultRules() {
+        context.automationDataStore.edit { values ->
+            if (values[seededKey] == true) return@edit
+            if (decode(values[rulesKey].orEmpty()).isEmpty()) values[rulesKey] = encode(defaultRules())
+            values[seededKey] = true
         }
     }
 
@@ -99,9 +96,9 @@ class AutomationRepository(private val context: Context) {
                         trigger = AutomationTrigger.fromStored(item.optString("trigger")),
                         action = AutomationAction.fromStored(item.optString("action")),
                         preset = MatrixPreset.fromStored(item.optString("preset")),
-                        contactName = item.optString("contactName", "Pradeep"),
+                        contactName = item.optString("contactName", ""),
                         contactPhone = item.optString("contactPhone", ""),
-                        targetMessage = item.optString("targetMessage", "Hi I'm Deepak"),
+                        targetMessage = item.optString("targetMessage", ""),
                         scheduledTime = item.optString("scheduledTime", "07:00"),
                         weatherCondition = item.optString("weatherCondition", "Rain"),
                         url = item.optString("url"),
@@ -116,8 +113,8 @@ class AutomationRepository(private val context: Context) {
                 )
             }
         }
-        if (decoded.isEmpty()) defaultRules() else decoded
-    }.getOrDefault(defaultRules())
+        decoded
+    }.getOrDefault(emptyList())
 
     companion object {
         fun defaultRules(): List<AutomationRule> = listOf(

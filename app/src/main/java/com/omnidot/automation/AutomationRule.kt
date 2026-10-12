@@ -17,11 +17,13 @@ enum class AutomationTrigger(
     val category: TriggerCategory,
     val subtitle: String,
     val guideInfo: String,
+    val available: Boolean = true,
+    val needsAppAlive: Boolean = false,
 ) {
     WHATSAPP_MESSAGE(
         label = "WhatsApp message received",
         category = TriggerCategory.COMMUNICATION,
-        subtitle = "When message arrives from specific contact (e.g. Pradeep)",
+        subtitle = "When a message arrives from a chosen contact",
         guideInfo = "Monitors incoming WhatsApp notifications for matching sender name or message keywords.",
     ),
     WEATHER_RAIN(
@@ -29,36 +31,42 @@ enum class AutomationTrigger(
         category = TriggerCategory.SCHEDULE,
         subtitle = "When morning forecast indicates rain (e.g. 7:00 AM)",
         guideInfo = "Triggers if weather conditions indicate rain or temperature shifts.",
+        available = false,
     ),
     SCHEDULED_TIME(
         label = "Scheduled time (Daily)",
         category = TriggerCategory.SCHEDULE,
         subtitle = "At a specific time every morning (e.g. 07:00 AM)",
         guideInfo = "Runs automatically at your chosen scheduled hour and minute every day.",
+        available = false,
     ),
     POWER_CONNECTED(
         label = "Charger connected",
         category = TriggerCategory.HARDWARE,
         subtitle = "When plugged into power or wireless pad",
         guideInfo = "Triggers immediately as soon as phone detects charging.",
+        needsAppAlive = true,
     ),
     POWER_DISCONNECTED(
         label = "Charger disconnected",
         category = TriggerCategory.HARDWARE,
         subtitle = "When power cable is unplugged",
         guideInfo = "Fires when power cable is removed.",
+        needsAppAlive = true,
     ),
     BATTERY_LOW(
         label = "Battery below 20%",
         category = TriggerCategory.HARDWARE,
         subtitle = "When charge drops below 20%",
         guideInfo = "System alert when battery drops below 20%.",
+        needsAppAlive = true,
     ),
     BATTERY_OKAY(
         label = "Battery fully charged",
         category = TriggerCategory.HARDWARE,
         subtitle = "When charge reaches 100% / healthy",
         guideInfo = "Fires when battery finishes charging.",
+        needsAppAlive = true,
     ),
     DEVICE_BOOT(
         label = "Device restarted",
@@ -71,30 +79,35 @@ enum class AutomationTrigger(
         category = TriggerCategory.SYSTEM,
         subtitle = "When device lockscreen is unlocked",
         guideInfo = "Triggers when you unlock the device.",
+        needsAppAlive = true,
     ),
     DAILY_MIDNIGHT(
         label = "Midnight rollover",
         category = TriggerCategory.SYSTEM,
         subtitle = "Every night at 00:00 midnight",
         guideInfo = "Fires automatically every night at 00:00.",
+        available = false,
     ),
     WIFI_CONNECTED(
         label = "Wi-Fi connected",
         category = TriggerCategory.NETWORK,
         subtitle = "When connected to local Wi-Fi",
         guideInfo = "Fires when joining a Wi-Fi network.",
+        needsAppAlive = true,
     ),
     WIFI_DISCONNECTED(
         label = "Wi-Fi disconnected",
         category = TriggerCategory.NETWORK,
         subtitle = "When disconnected from Wi-Fi",
         guideInfo = "Fires when leaving Wi-Fi.",
+        needsAppAlive = true,
     ),
     HEADSET_PLUG(
         label = "Headphones connected",
         category = TriggerCategory.HARDWARE,
         subtitle = "When wired or Bluetooth audio connects",
         guideInfo = "Fires when headphones or earbuds are connected.",
+        needsAppAlive = true,
     ),
     INBOUND_WEBHOOK(
         label = "Deep Link / Remote Trigger",
@@ -104,6 +117,8 @@ enum class AutomationTrigger(
     );
 
     companion object {
+        val pickerOptions: List<AutomationTrigger> = entries.filter { it.available }
+
         fun fromStored(value: String?): AutomationTrigger =
             entries.firstOrNull { it.name == value } ?: POWER_CONNECTED
     }
@@ -127,7 +142,7 @@ enum class AutomationAction(
     SPEAK_TEXT(
         label = "Speak aloud (Voice TTS)",
         category = ActionCategory.VOICE,
-        subtitle = "Speak custom speech text aloud (e.g. \"Hi I'm Deepak\")",
+        subtitle = "Speak your text aloud in a calm voice",
         guideInfo = "Uses Android's native Text-to-Speech engine to voice your text out loud through the speaker.",
     ),
     SEND_WHATSAPP(
@@ -231,9 +246,9 @@ data class AutomationRule(
     val trigger: AutomationTrigger,
     val action: AutomationAction,
     val preset: MatrixPreset = MatrixPreset.YEAR_PROGRESS,
-    val contactName: String = "Pradeep",
+    val contactName: String = "",
     val contactPhone: String = "",
-    val targetMessage: String = "Hi I'm Deepak",
+    val targetMessage: String = "",
     val scheduledTime: String = "07:00",
     val weatherCondition: String = "Rain",
     val url: String = "",
@@ -241,33 +256,25 @@ data class AutomationRule(
     val customPayload: String = "",
     val lastRunTime: Long = 0L,
     val lastRunStatus: String = "",
-    val speechPitch: Float = 1.0f,
-    val speechRate: Float = 1.0f,
+    val speechPitch: Float = VoiceStyle.CALM.pitch,
+    val speechRate: Float = VoiceStyle.CALM.rate,
     val playChime: Boolean = true,
 ) {
     companion object {
         fun createDefaultChargerConnectedRule(): AutomationRule = AutomationRule(
             id = "default_charger_connected",
-            name = "⚡ Charger: Energetic YES!",
-            enabled = true,
+            name = "When charger connects → speak",
             trigger = AutomationTrigger.POWER_CONNECTED,
             action = AutomationAction.SPEAK_TEXT,
-            targetMessage = "YESSS!",
-            speechPitch = 1.45f,
-            speechRate = 1.15f,
-            playChime = true,
+            targetMessage = "Charging started",
         )
 
         fun createDefaultChargerDisconnectedRule(): AutomationRule = AutomationRule(
             id = "default_charger_disconnected",
-            name = "🔌 Unplugged: Oh Noo!!",
-            enabled = true,
+            name = "When charger disconnects → speak",
             trigger = AutomationTrigger.POWER_DISCONNECTED,
             action = AutomationAction.SPEAK_TEXT,
-            targetMessage = "Oh Noo!!",
-            speechPitch = 0.88f,
-            speechRate = 0.88f,
-            playChime = true,
+            targetMessage = "Charger disconnected",
         )
     }
 }

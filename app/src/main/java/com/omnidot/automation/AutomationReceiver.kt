@@ -3,6 +3,7 @@ package com.omnidot.automation
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
@@ -19,11 +20,7 @@ class AutomationReceiver : BroadcastReceiver() {
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 val repository = AutomationRepository(context)
-                var rules = repository.current().filter { it.enabled && it.trigger == trigger }
-                if (rules.isEmpty() && (trigger == AutomationTrigger.POWER_CONNECTED || trigger == AutomationTrigger.POWER_DISCONNECTED)) {
-                    repository.ensureDefaultRules()
-                    rules = repository.current().filter { it.enabled && it.trigger == trigger }
-                }
+                val rules = repository.current().filter { it.enabled && it.trigger == trigger && it.trigger.available }
                 for (rule in rules) {
                     val result = AutomationEngine.execute(context, rule)
                     val statusText = if (result.isSuccess) {
@@ -77,6 +74,19 @@ class AutomationReceiver : BroadcastReceiver() {
             @Suppress("DEPRECATION")
             val networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI)
             networkInfo?.isConnected == true
+        }
+    }
+
+    companion object {
+        fun deviceEventFilter(): IntentFilter = IntentFilter().apply {
+            addAction(Intent.ACTION_POWER_CONNECTED)
+            addAction(Intent.ACTION_POWER_DISCONNECTED)
+            addAction(Intent.ACTION_BATTERY_LOW)
+            addAction(Intent.ACTION_BATTERY_OKAY)
+            addAction(Intent.ACTION_USER_PRESENT)
+            addAction(Intent.ACTION_HEADSET_PLUG)
+            @Suppress("DEPRECATION")
+            addAction(ConnectivityManager.CONNECTIVITY_ACTION)
         }
     }
 }

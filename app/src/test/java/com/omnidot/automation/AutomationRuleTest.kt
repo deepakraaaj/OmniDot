@@ -71,20 +71,28 @@ class AutomationRuleTest {
     }
 
     @Test
-    fun `default charger connected and disconnected rules are configured for energetic and dramatic feedback`() {
-        val connectedRule = AutomationRule.createDefaultChargerConnectedRule()
-        assertEquals(AutomationTrigger.POWER_CONNECTED, connectedRule.trigger)
-        assertEquals(AutomationAction.SPEAK_TEXT, connectedRule.action)
-        assertEquals("YESSS!", connectedRule.targetMessage)
-        assertTrue("Speech pitch should be energetic (> 1.2f)", connectedRule.speechPitch > 1.2f)
-        assertTrue("Speech rate should be upbeat (>= 1.1f)", connectedRule.speechRate >= 1.1f)
-        assertTrue("Chime should be enabled", connectedRule.playChime)
+    fun `default charger rules are calm`() {
+        val connected = AutomationRule.createDefaultChargerConnectedRule()
+        assertEquals(AutomationTrigger.POWER_CONNECTED, connected.trigger)
+        assertEquals("Charging started", connected.targetMessage)
+        assertEquals(VoiceStyle.CALM.pitch, connected.speechPitch)
+        assertEquals(VoiceStyle.CALM.rate, connected.speechRate)
+        val disconnected = AutomationRule.createDefaultChargerDisconnectedRule()
+        assertEquals("Charger disconnected", disconnected.targetMessage)
+        assertEquals(VoiceStyle.CALM.rate, disconnected.speechRate)
+    }
 
-        val disconnectedRule = AutomationRule.createDefaultChargerDisconnectedRule()
-        assertEquals(AutomationTrigger.POWER_DISCONNECTED, disconnectedRule.trigger)
-        assertEquals(AutomationAction.SPEAK_TEXT, disconnectedRule.action)
-        assertEquals("Oh Noo!!", disconnectedRule.targetMessage)
-        assertTrue("Speech pitch should be lower/dramatic (< 1.0f)", disconnectedRule.speechPitch < 1.0f)
-        assertTrue("Chime should be enabled", disconnectedRule.playChime)
+    @Test
+    fun `hidden triggers are excluded from the picker`() {
+        val hidden = setOf(AutomationTrigger.SCHEDULED_TIME, AutomationTrigger.WEATHER_RAIN, AutomationTrigger.DAILY_MIDNIGHT)
+        hidden.forEach { assertTrue(!it.available && it !in AutomationTrigger.pickerOptions) }
+        assertTrue(AutomationTrigger.POWER_CONNECTED in AutomationTrigger.pickerOptions)
+    }
+
+    @Test
+    fun `rule defaults carry no personal data`() {
+        val rule = AutomationRule(name = "x", trigger = AutomationTrigger.POWER_CONNECTED, action = AutomationAction.VIBRATE)
+        assertEquals("", rule.contactName)
+        assertEquals("", rule.targetMessage)
     }
 }

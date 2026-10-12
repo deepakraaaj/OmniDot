@@ -100,6 +100,8 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun setAutomationEnabled(id: String, enabled: Boolean) = viewModelScope.launch {
+        val rule = automations.value.firstOrNull { it.id == id } ?: return@launch
+        if (enabled && !rule.trigger.available) return@launch
         automationRepository.setEnabled(id, enabled)
     }
 
