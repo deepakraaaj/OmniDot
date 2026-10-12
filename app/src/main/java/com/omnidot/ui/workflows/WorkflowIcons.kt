@@ -7,6 +7,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BatteryAlert
 import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.Alarm
+import androidx.compose.material.icons.rounded.AlarmAdd
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material.icons.rounded.Power
@@ -59,6 +60,7 @@ internal fun triggerIcon(trigger: AutomationTrigger): ImageVector = when (trigge
 }
 
 internal fun actionIcon(action: AutomationAction): ImageVector = when (action) {
+    AutomationAction.SET_PHONE_ALARM -> Icons.Rounded.AlarmAdd
     AutomationAction.RING_ALARM -> Icons.Rounded.Alarm
     AutomationAction.SPEAK_TEXT -> Icons.Rounded.Info
     AutomationAction.SEND_WHATSAPP -> Icons.Rounded.Forum

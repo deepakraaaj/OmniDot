@@ -4,6 +4,9 @@ data class Recipe(val title: String, val description: String, val build: () -> A
 
 object WorkflowRecipes {
     val all: List<Recipe> = listOf(
+        Recipe("Alarm for a shared link", "When a contact sends a link on WhatsApp, set a Clock alarm 20 minutes later") {
+            AutomationRule(name = "", trigger = AutomationTrigger.WHATSAPP_MESSAGE, action = AutomationAction.SET_PHONE_ALARM, onlyLinks = true, alarmInMinutes = 20)
+        },
         Recipe("Good morning after your alarm", "When you turn off your alarm: a soft bell, then today's goals in a calm voice") {
             AutomationRule(name = "", trigger = AutomationTrigger.ALARM_DISMISSED, action = AutomationAction.SPEAK_TEXT, targetMessage = "{greeting}")
         },

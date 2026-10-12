@@ -33,7 +33,7 @@ import android.speech.tts.TextToSpeech
 
 object AutomationEngine {
 
-    suspend fun execute(context: Context, rule: AutomationRule): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun execute(context: Context, rule: AutomationRule, event: TriggerEvent? = null): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             val preferencesManager = PreferencesManager(context)
             val currentPrefs = preferencesManager.current()
@@ -156,6 +156,28 @@ object AutomationEngine {
                     "Opened link: $resolvedUrl"
                 }
 
+                AutomationAction.SET_PHONE_ALARM -> {
+                    val at = PhoneAlarmTime.inMinutes(java.time.LocalTime.now(), rule.alarmInMinutes)
+                    val label = resolveVariables(rule.alarmLabel.ifBlank { "Link from {sender}" }, context, rule, event).take(60)
+                    val intent = Intent(android.provider.AlarmClock.ACTION_SET_ALARM)
+                        .putExtra(android.provider.AlarmClock.EXTRA_HOUR, at.hour)
+                        .putExtra(android.provider.AlarmClock.EXTRA_MINUTES, at.minute)
+                        .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, label)
+                        .putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, true)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    try {
+                        context.startActivity(intent)
+                        "Phone alarm set for %02d:%02d".format(at.hour, at.minute)
+                    } catch (e: Exception) {
+                        // No Clock app or a background-start block: fall back to OmniDot's own calm alarm.
+                        com.omnidot.alarm.AlarmScheduler.snooze(
+                            context, AlarmRingService.Ring(rule.id, label, rule.snoozeMinutes, false),
+                            java.time.ZonedDateTime.now().plusMinutes(rule.alarmInMinutes.toLong()),
+                        )
+                        "Calm alarm set for %02d:%02d (Clock app unavailable)".format(at.hour, at.minute)
+                    }
+                }
+
                 AutomationAction.RING_ALARM -> {
                     AlarmRingService.start(context, AlarmRingService.Ring(rule.id, rule.alarmLabel, rule.snoozeMinutes, rule.speakGreeting))
                     "Calm alarm ringing"
@@ -220,7 +242,7 @@ object AutomationEngine {
         }
     }
 
-    private suspend fun resolveVariables(input: String, context: Context, rule: AutomationRule): String {
+    private suspend fun resolveVariables(input: String, context: Context, rule: AutomationRule, event: TriggerEvent? = null): String {
         val today = LocalDate.now()
         val dayOfYear = today.dayOfYear
         val totalDays = if (today.isLeapYear) 366 else 365
@@ -232,6 +254,9 @@ object AutomationEngine {
         } else ""
         return input
             .replace("{greeting}", greeting)
+            .replace("{sender}", event?.sender?.ifBlank { null } ?: rule.contactName.ifBlank { "someone" })
+            .replace("{message}", event?.message.orEmpty())
+            .replace("{link}", event?.link.orEmpty())
             .replace("{battery}", battery.toString())
             .replace("{date}", today.toString())
             .replace("{year_percent}", yearPercent)

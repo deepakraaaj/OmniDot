@@ -54,13 +54,16 @@ class OmniNotificationListenerService : NotificationListenerService() {
             val repository = AutomationRepository(applicationContext)
             val rules = repository.current()
 
+            val link = LinkDetector.firstLink(text)
             val matchingRules = rules.filter { rule ->
                 rule.enabled && rule.trigger == AutomationTrigger.WHATSAPP_MESSAGE &&
-                    (rule.contactName.isBlank() || title.contains(rule.contactName.trim(), ignoreCase = true))
+                    (rule.contactName.isBlank() || title.contains(rule.contactName.trim(), ignoreCase = true)) &&
+                    (!rule.onlyLinks || link != null)
             }
+            val event = TriggerEvent(sender = title, message = text, link = link.orEmpty())
 
             matchingRules.forEach { rule ->
-                val result = AutomationEngine.execute(applicationContext, rule)
+                val result = AutomationEngine.execute(applicationContext, rule, event)
                 val statusMsg = result.getOrElse { "Failed: ${it.message}" }
                 repository.recordRun(rule.id, statusMsg)
             }

@@ -18,7 +18,7 @@ object WorkflowText {
         AutomationTrigger.HEADSET_PLUG -> "When headphones connect"
         AutomationTrigger.WIFI_CONNECTED -> "When Wi-Fi connects"
         AutomationTrigger.WIFI_DISCONNECTED -> "When Wi-Fi disconnects"
-        AutomationTrigger.WHATSAPP_MESSAGE -> "When ${rule.contactName.ifBlank { "anyone" }} messages on WhatsApp"
+        AutomationTrigger.WHATSAPP_MESSAGE -> "When ${rule.contactName.ifBlank { "anyone" }} ${if (rule.onlyLinks) "sends a link" else "messages"} on WhatsApp"
         AutomationTrigger.INBOUND_WEBHOOK -> "When a remote trigger arrives"
         AutomationTrigger.SCHEDULED_TIME -> "${if (rule.days.isEmpty()) "Every day" else DaysText.describe(rule.days)} at ${rule.scheduledTime}"
         AutomationTrigger.WEATHER_RAIN -> "When rain is forecast"
@@ -26,6 +26,7 @@ object WorkflowText {
     }
 
     fun doText(rule: AutomationRule): String = when (rule.action) {
+        AutomationAction.SET_PHONE_ALARM -> "Set phone alarm in ${rule.alarmInMinutes} min"
         AutomationAction.RING_ALARM -> if (rule.alarmLabel.isBlank()) "Ring calm alarm" else "Ring calm alarm \"${rule.alarmLabel}\""
         AutomationAction.SPEAK_TEXT -> if (rule.targetMessage.isBlank()) "Speak your words" else "Speak \"${rule.targetMessage}\""
         AutomationAction.SEND_WHATSAPP -> "Open WhatsApp to ${rule.contactName.ifBlank { "a contact" }}"
@@ -76,6 +77,7 @@ object WorkflowText {
             AutomationAction.SLACK_WEBHOOK, AutomationAction.OPEN_URL ->
                 rule.url.startsWith("http://") || rule.url.startsWith("https://")
             AutomationAction.SHOW_NOTIFICATION -> rule.message.isNotBlank()
+            AutomationAction.SET_PHONE_ALARM -> rule.alarmInMinutes in 1..1440
             else -> true
         }
     }

@@ -122,6 +122,13 @@ fun WorkflowEditor(
             }
             if (rule.trigger == AutomationTrigger.WHATSAPP_MESSAGE) {
                 Field(rule.contactName, { rule = rule.copy(contactName = it) }, "Message from", "Contact name (leave empty for anyone)")
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Only messages with a link", style = MaterialTheme.typography.bodyLarge)
+                        Text("For meeting links, videos, articles", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(checked = rule.onlyLinks, onCheckedChange = { rule = rule.copy(onlyLinks = it) })
+                }
             }
 
             Text("Do", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 24.dp, bottom = 8.dp))
@@ -218,6 +225,19 @@ private fun ActionFields(
             TextButton(onClick = onPreview, modifier = Modifier.padding(top = 4.dp)) {
                 Icon(Icons.Rounded.PlayArrow, contentDescription = null); Spacer(Modifier.width(6.dp)); Text("Preview voice")
             }
+        }
+        AutomationAction.SET_PHONE_ALARM -> {
+            Text("Ring after", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
+            val options = listOf(5, 10, 20, 30, 60)
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                options.forEachIndexed { i, m ->
+                    SegmentedButton(rule.alarmInMinutes == m, { onChange(rule.copy(alarmInMinutes = m)) }, SegmentedButtonDefaults.itemShape(i, options.size)) {
+                        Text(if (m < 60) "$m min" else "1 h", maxLines = 1)
+                    }
+                }
+            }
+            Field(rule.alarmLabel, { onChange(rule.copy(alarmLabel = it.take(60))) }, "Alarm label", "Link from {sender}")
+            Note("Sets a one-time alarm in your Clock app. Variables: {sender} {link} {message}")
         }
         AutomationAction.RING_ALARM -> {
             Field(rule.alarmLabel, { onChange(rule.copy(alarmLabel = it.take(40))) }, "Label (optional)", "Morning run")

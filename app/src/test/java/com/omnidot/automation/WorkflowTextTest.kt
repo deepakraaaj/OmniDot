@@ -67,4 +67,13 @@ class WorkflowTextTest {
         assertEquals("When I turn off my alarm", WorkflowText.whenText(rule(AutomationTrigger.ALARM_DISMISSED, AutomationAction.VIBRATE)))
         assertEquals("When my alarm rings", WorkflowText.whenText(rule(AutomationTrigger.PHONE_ALARM_RINGS, AutomationAction.VIBRATE)))
     }
+
+    @Test
+    fun `link alarm sentences and validation`() {
+        val r = rule(AutomationTrigger.WHATSAPP_MESSAGE, AutomationAction.SET_PHONE_ALARM) { copy(contactName = "Pradeep", onlyLinks = true, alarmInMinutes = 20) }
+        assertEquals("When Pradeep sends a link on WhatsApp", WorkflowText.whenText(r))
+        assertEquals("Set phone alarm in 20 min", WorkflowText.doText(r))
+        assertTrue(WorkflowText.canSave(r))
+        assertFalse(WorkflowText.canSave(r.copy(alarmInMinutes = 0)))
+    }
 }

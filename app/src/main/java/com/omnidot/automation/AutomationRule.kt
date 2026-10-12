@@ -150,6 +150,12 @@ enum class AutomationAction(
     val subtitle: String,
     val guideInfo: String,
 ) {
+    SET_PHONE_ALARM(
+        label = "Set phone alarm",
+        category = ActionCategory.SYSTEM,
+        subtitle = "Add an alarm to your Clock app, minutes from now",
+        guideInfo = "Sets a one-time alarm in your Clock app, for example 20 minutes after a meeting link arrives.",
+    ),
     RING_ALARM(
         label = "Ring calm alarm",
         category = ActionCategory.VOICE,
@@ -281,6 +287,9 @@ data class AutomationRule(
     val alarmLabel: String = "",
     val snoozeMinutes: Int = 10,
     val speakGreeting: Boolean = true,
+    /** WhatsApp trigger: only messages that contain a link. */
+    val onlyLinks: Boolean = false,
+    val alarmInMinutes: Int = 20,
 ) {
     companion object {
         fun createDefaultChargerConnectedRule(): AutomationRule = AutomationRule(
