@@ -71,7 +71,7 @@ fun WorkflowsScreen(
         }
         probe = HealthCheck.probe(context)
     }
-    val issues = HealthCheck.issues(probe.notificationsGranted, probe.listenerGranted, probe.ignoringBatteryOptimizations, rules)
+    val issues = HealthCheck.issues(probe.notificationsGranted, probe.listenerGranted, probe.backgroundAllowed, rules)
 
     androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().padding(padding)) {
         LazyColumn(

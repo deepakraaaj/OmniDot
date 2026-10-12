@@ -90,7 +90,7 @@ fun SettingsScreen(padding: PaddingValues, snackbar: SnackbarHostState, vm: Omni
                 else context.startActivity(HealthCheck.fixIntent(context, HealthIssue.NOTIFICATIONS_BLOCKED))
             }
             PermissionRow("Notification access (WhatsApp)", probe.listenerGranted) { context.startActivity(HealthCheck.fixIntent(context, HealthIssue.LISTENER_MISSING)) }
-            PermissionRow("Unrestricted battery", probe.ignoringBatteryOptimizations) { context.startActivity(HealthCheck.fixIntent(context, HealthIssue.BATTERY_OPTIMIZED)) }
+            PermissionRow("Background usage", probe.backgroundAllowed) { context.startActivity(HealthCheck.fixIntent(context, HealthIssue.BACKGROUND_RESTRICTED)) }
         }
 
         SectionHeader("Remote trigger")

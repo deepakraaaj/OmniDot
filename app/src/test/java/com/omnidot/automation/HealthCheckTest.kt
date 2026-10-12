@@ -15,9 +15,14 @@ class HealthCheckTest {
 
     @Test
     fun `issues appear only when relevant to enabled rules`() {
-        assertEquals(listOf(HealthIssue.BATTERY_OPTIMIZED), HealthCheck.issues(false, false, false, listOf(speak)))
+        assertEquals(listOf(HealthIssue.BACKGROUND_RESTRICTED), HealthCheck.issues(false, false, backgroundAllowed = false, rules = listOf(speak)))
         assertEquals(listOf(HealthIssue.NOTIFICATIONS_BLOCKED), HealthCheck.issues(false, true, true, listOf(notify)))
         assertEquals(listOf(HealthIssue.LISTENER_MISSING), HealthCheck.issues(true, false, true, listOf(whatsapp)))
         assertEquals(emptyList<HealthIssue>(), HealthCheck.issues(false, false, false, listOf(whatsapp.copy(enabled = false))))
+    }
+
+    @Test
+    fun `allowed background usage needs no fix even when battery is optimized`() {
+        assertEquals(emptyList<HealthIssue>(), HealthCheck.issues(true, true, backgroundAllowed = true, rules = listOf(speak)))
     }
 }
