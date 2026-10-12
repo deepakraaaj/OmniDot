@@ -46,6 +46,7 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.rhino)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
