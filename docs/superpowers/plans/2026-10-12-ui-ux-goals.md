@@ -20,7 +20,7 @@
 - Hidden triggers (no backend): `SCHEDULED_TIME`, `WEATHER_RAIN`, `DAILY_MIDNIGHT`.
 - Wallpaper only re-renders automatically if the user pressed **Apply to lock screen** at least once (`wallpaperEnabled`).
 - Calm voice defaults: rate 0.9, pitch 1.0, volume 0.8.
-- Commit after every task with message ending in `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- Commit after every task with a plain message (no AI attribution trailers).
 
 ## Review Focus
 
