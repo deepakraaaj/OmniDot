@@ -3,7 +3,6 @@ package com.omnidot.alarm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import androidx.core.content.ContextCompat
 import com.omnidot.automation.AutomationEngine
 import com.omnidot.automation.AutomationRepository
 import kotlinx.coroutines.CoroutineScope
@@ -14,14 +13,7 @@ import kotlinx.coroutines.launch
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         when (intent?.action) {
-            AlarmScheduler.ACTION_RING -> {
-                val alarmId = intent.getStringExtra(AlarmScheduler.EXTRA_ALARM_ID) ?: return
-                ContextCompat.startForegroundService(
-                    context,
-                    Intent(context, AlarmRingService::class.java).setAction(AlarmRingService.ACTION_START)
-                        .putExtra(AlarmScheduler.EXTRA_ALARM_ID, alarmId),
-                )
-            }
+            AlarmScheduler.ACTION_RING -> AlarmRingService.Ring.from(intent)?.let { AlarmRingService.start(context, it) }
             AlarmScheduler.ACTION_TIME_RULE -> {
                 val ruleId = intent.getStringExtra(AlarmScheduler.EXTRA_RULE_ID) ?: return
                 val pending = goAsync()

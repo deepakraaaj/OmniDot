@@ -39,6 +39,18 @@ enum class AutomationTrigger(
         subtitle = "At a set time, every day or on chosen days",
         guideInfo = "Runs automatically at your chosen scheduled hour and minute every day.",
     ),
+    PHONE_ALARM_RINGS(
+        label = "When my alarm rings",
+        category = TriggerCategory.SCHEDULE,
+        subtitle = "When your Clock app's alarm goes off",
+        guideInfo = "Detects the ringing alarm from your Clock app. Needs notification access.",
+    ),
+    ALARM_DISMISSED(
+        label = "When I turn off my alarm",
+        category = TriggerCategory.SCHEDULE,
+        subtitle = "When you dismiss or snooze your alarm",
+        guideInfo = "Runs right after your Clock app's alarm (or a calm alarm) stops, so your morning routine can follow.",
+    ),
     POWER_CONNECTED(
         label = "Charger connected",
         category = TriggerCategory.HARDWARE,
@@ -138,6 +150,12 @@ enum class AutomationAction(
     val subtitle: String,
     val guideInfo: String,
 ) {
+    RING_ALARM(
+        label = "Ring calm alarm",
+        category = ActionCategory.VOICE,
+        subtitle = "Soft bell that slowly rises, full screen, snooze, good-morning goals",
+        guideInfo = "Rings on the alarm channel until you tap Snooze or I'm up. Pair it with an At a time trigger.",
+    ),
     SPEAK_TEXT(
         label = "Speak aloud (Voice TTS)",
         category = ActionCategory.VOICE,
@@ -260,6 +278,9 @@ data class AutomationRule(
     val speechPitch: Float = VoiceStyle.CALM.pitch,
     val speechRate: Float = VoiceStyle.CALM.rate,
     val playChime: Boolean = true,
+    val alarmLabel: String = "",
+    val snoozeMinutes: Int = 10,
+    val speakGreeting: Boolean = true,
 ) {
     companion object {
         fun createDefaultChargerConnectedRule(): AutomationRule = AutomationRule(

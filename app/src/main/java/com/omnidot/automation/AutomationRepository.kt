@@ -80,6 +80,9 @@ class AutomationRepository(private val context: Context) {
                 put("speechPitch", rule.speechPitch.toDouble())
                 put("speechRate", rule.speechRate.toDouble())
                 put("playChime", rule.playChime)
+                put("alarmLabel", rule.alarmLabel)
+                put("snoozeMinutes", rule.snoozeMinutes)
+                put("speakGreeting", rule.speakGreeting)
             })
         }
     }.toString()
@@ -113,6 +116,9 @@ class AutomationRepository(private val context: Context) {
                         speechPitch = item.optDouble("speechPitch", 1.0).toFloat(),
                         speechRate = item.optDouble("speechRate", 1.0).toFloat(),
                         playChime = item.optBoolean("playChime", true),
+                        alarmLabel = item.optString("alarmLabel", ""),
+                        snoozeMinutes = item.optInt("snoozeMinutes", 10).coerceIn(1, 60),
+                        speakGreeting = item.optBoolean("speakGreeting", true),
                     ),
                 )
             }

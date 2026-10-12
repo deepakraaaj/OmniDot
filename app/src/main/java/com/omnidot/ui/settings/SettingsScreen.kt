@@ -89,7 +89,7 @@ fun SettingsScreen(padding: PaddingValues, snackbar: SnackbarHostState, vm: Omni
                 if (Build.VERSION.SDK_INT >= 33) notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                 else context.startActivity(HealthCheck.fixIntent(context, HealthIssue.NOTIFICATIONS_BLOCKED))
             }
-            PermissionRow("Notification access (WhatsApp)", probe.listenerGranted) { context.startActivity(HealthCheck.fixIntent(context, HealthIssue.LISTENER_MISSING)) }
+            PermissionRow("Notification access (WhatsApp, alarms)", probe.listenerGranted) { context.startActivity(HealthCheck.fixIntent(context, HealthIssue.LISTENER_MISSING)) }
             PermissionRow("Background usage", probe.backgroundAllowed) { context.startActivity(HealthCheck.fixIntent(context, HealthIssue.BACKGROUND_RESTRICTED)) }
         }
 

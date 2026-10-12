@@ -7,7 +7,9 @@ import org.junit.Test
 class WorkflowRecipesTest {
     @Test
     fun `recipes are saveable and use only available triggers`() {
-        assertEquals(3, WorkflowRecipes.all.size)
+        assertEquals(5, WorkflowRecipes.all.size)
+        assertTrue(WorkflowRecipes.all.any { it.build().trigger == AutomationTrigger.ALARM_DISMISSED })
+        assertTrue(WorkflowRecipes.all.any { it.build().action == AutomationAction.RING_ALARM })
         WorkflowRecipes.all.forEach { recipe ->
             val rule = recipe.build()
             assertTrue(recipe.title, rule.trigger.available)

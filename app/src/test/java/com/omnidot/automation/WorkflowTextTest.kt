@@ -57,4 +57,14 @@ class WorkflowTextTest {
         val weekdays = setOf(java.time.DayOfWeek.MONDAY, java.time.DayOfWeek.TUESDAY, java.time.DayOfWeek.WEDNESDAY, java.time.DayOfWeek.THURSDAY, java.time.DayOfWeek.FRIDAY)
         assertEquals("Weekdays at 07:00", WorkflowText.whenText(r.copy(days = weekdays)))
     }
+
+    @Test
+    fun `alarm sentences`() {
+        val ring = rule(AutomationTrigger.SCHEDULED_TIME, AutomationAction.RING_ALARM) { copy(scheduledTime = "06:30") }
+        assertEquals("Ring calm alarm", WorkflowText.doText(ring))
+        assertEquals("Ring calm alarm \"Gym\"", WorkflowText.doText(ring.copy(alarmLabel = "Gym")))
+        assertTrue(WorkflowText.canSave(ring))
+        assertEquals("When I turn off my alarm", WorkflowText.whenText(rule(AutomationTrigger.ALARM_DISMISSED, AutomationAction.VIBRATE)))
+        assertEquals("When my alarm rings", WorkflowText.whenText(rule(AutomationTrigger.PHONE_ALARM_RINGS, AutomationAction.VIBRATE)))
+    }
 }

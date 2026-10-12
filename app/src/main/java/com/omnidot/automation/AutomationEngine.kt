@@ -14,6 +14,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
+import com.omnidot.alarm.AlarmRingService
 import com.omnidot.core.WallpaperRefresher
 import com.omnidot.core.MatrixPreset
 import com.omnidot.data.PreferencesManager
@@ -155,6 +156,11 @@ object AutomationEngine {
                     "Opened link: $resolvedUrl"
                 }
 
+                AutomationAction.RING_ALARM -> {
+                    AlarmRingService.start(context, AlarmRingService.Ring(rule.id, rule.alarmLabel, rule.snoozeMinutes, rule.speakGreeting))
+                    "Calm alarm ringing"
+                }
+
                 AutomationAction.SPEAK_TEXT -> {
                     val textToSpeak = resolveVariables(rule.targetMessage.ifBlank { rule.message }, context, rule)
                     if (rule.playChime) {
@@ -214,14 +220,18 @@ object AutomationEngine {
         }
     }
 
-    private fun resolveVariables(input: String, context: Context, rule: AutomationRule): String {
+    private suspend fun resolveVariables(input: String, context: Context, rule: AutomationRule): String {
         val today = LocalDate.now()
         val dayOfYear = today.dayOfYear
         val totalDays = if (today.isLeapYear) 366 else 365
         val yearPercent = String.format("%.1f", (dayOfYear.toFloat() / totalDays) * 100f)
         val battery = getBatteryLevel(context)
 
+        val greeting = if ("{greeting}" in input) {
+            com.omnidot.alarm.MorningGreeting.text(com.omnidot.goals.GoalRepository(context).current(), today)
+        } else ""
         return input
+            .replace("{greeting}", greeting)
             .replace("{battery}", battery.toString())
             .replace("{date}", today.toString())
             .replace("{year_percent}", yearPercent)

@@ -24,7 +24,7 @@ import com.omnidot.automation.*
 import com.omnidot.core.MatrixPreset
 import com.omnidot.alarm.DaysText
 import com.omnidot.ui.MaxContentWidth
-import com.omnidot.ui.alarms.formatClock
+import com.omnidot.alarm.formatClock
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -144,7 +144,7 @@ fun WorkflowEditor(
             title = "When should it run?",
             items = AutomationTrigger.pickerOptions + listOfNotNull(initial?.trigger?.takeIf { !it.available }),
             categoryOf = { it.category.label }, label = { it.label }, subtitle = { it.subtitle }, icon = { triggerIcon(it) },
-            locked = { it == AutomationTrigger.WHATSAPP_MESSAGE && !listenerGranted },
+            locked = { it in HealthCheck.listenerTriggers && !listenerGranted },
             onUnlock = { OmniNotificationListenerService.openNotificationAccessSettings(context) },
             onSelect = { rule = rule.copy(trigger = it); sheet = null },
             onDismiss = { sheet = null },
@@ -197,6 +197,7 @@ private fun ActionFields(
     when (rule.action) {
         AutomationAction.SPEAK_TEXT -> {
             Field(rule.targetMessage, { onChange(rule.copy(targetMessage = it)) }, "Words to speak", "Charging started", minLines = 2)
+            Note("Tip: {greeting} speaks a good morning with today's goals.")
             Text("Voice", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 VoiceStyle.entries.forEachIndexed { i, style ->
@@ -217,6 +218,26 @@ private fun ActionFields(
             TextButton(onClick = onPreview, modifier = Modifier.padding(top = 4.dp)) {
                 Icon(Icons.Rounded.PlayArrow, contentDescription = null); Spacer(Modifier.width(6.dp)); Text("Preview voice")
             }
+        }
+        AutomationAction.RING_ALARM -> {
+            Field(rule.alarmLabel, { onChange(rule.copy(alarmLabel = it.take(40))) }, "Label (optional)", "Morning run")
+            Text("Snooze", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
+            val options = listOf(5, 10, 15)
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                options.forEachIndexed { i, m ->
+                    SegmentedButton(rule.snoozeMinutes == m, { onChange(rule.copy(snoozeMinutes = m)) }, SegmentedButtonDefaults.itemShape(i, options.size)) { Text("$m min") }
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Good-morning voice", style = MaterialTheme.typography.bodyLarge)
+                    Text("After \"I'm up\", hear today's goals in a calm voice", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(checked = rule.speakGreeting, onCheckedChange = { onChange(rule.copy(speakGreeting = it)) })
+            }
+            TextButton(onClick = { SoundSynthesizer.playSoftBell() }) { Text("Hear the bell") }
+            Note(if (rule.trigger == AutomationTrigger.SCHEDULED_TIME) "Starts at 5% volume and rises over 90 seconds. Rings even on silent, until you tap Snooze or I'm up."
+                 else "Tip: choose \"At a time\" above to use this as your wake-up alarm.")
         }
         AutomationAction.SEND_WHATSAPP, AutomationAction.CALL_PHONE -> {
             Surface(Modifier.fillMaxWidth().padding(top = 12.dp), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface) {

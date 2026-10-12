@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountTree
-import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
@@ -35,7 +34,6 @@ val MaxContentWidth = 640.dp
 enum class AppTab(val label: String, val icon: ImageVector) {
     WORKFLOWS("Workflows", Icons.Rounded.AccountTree),
     GOALS("Goals", Icons.Rounded.Flag),
-    ALARMS("Alarms", Icons.Rounded.Alarm),
     SETTINGS("Settings", Icons.Rounded.Settings),
 }
 
@@ -44,7 +42,6 @@ fun OmniDotApp(
     initialTab: AppTab,
     workflows: @Composable (PaddingValues, SnackbarHostState, (Boolean) -> Unit) -> Unit,
     goals: @Composable (PaddingValues, SnackbarHostState) -> Unit,
-    alarms: @Composable (PaddingValues, SnackbarHostState) -> Unit,
     settings: @Composable (PaddingValues, SnackbarHostState) -> Unit,
 ) {
     var tab by rememberSaveable(initialTab) { mutableStateOf(initialTab) }
@@ -72,7 +69,6 @@ fun OmniDotApp(
                 when (tab) {
                     AppTab.WORKFLOWS -> workflows(padding, snackbar) { hideBar = it }
                     AppTab.GOALS -> goals(padding, snackbar)
-                    AppTab.ALARMS -> alarms(padding, snackbar)
                     AppTab.SETTINGS -> settings(padding, snackbar)
                 }
             }

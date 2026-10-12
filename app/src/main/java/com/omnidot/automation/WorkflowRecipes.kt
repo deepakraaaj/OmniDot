@@ -4,6 +4,15 @@ data class Recipe(val title: String, val description: String, val build: () -> A
 
 object WorkflowRecipes {
     val all: List<Recipe> = listOf(
+        Recipe("Good morning after your alarm", "When you turn off your alarm: a soft bell, then today's goals in a calm voice") {
+            AutomationRule(name = "", trigger = AutomationTrigger.ALARM_DISMISSED, action = AutomationAction.SPEAK_TEXT, targetMessage = "{greeting}")
+        },
+        Recipe("Calm wake-up", "Weekdays at 6:30: a soft rising bell, then a good-morning with today's goals") {
+            AutomationRule(
+                name = "", trigger = AutomationTrigger.SCHEDULED_TIME, action = AutomationAction.RING_ALARM, scheduledTime = "06:30",
+                days = setOf(java.time.DayOfWeek.MONDAY, java.time.DayOfWeek.TUESDAY, java.time.DayOfWeek.WEDNESDAY, java.time.DayOfWeek.THURSDAY, java.time.DayOfWeek.FRIDAY),
+            )
+        },
         Recipe("Calm charging chime", "A soft bell and a gentle voice when you plug in") {
             AutomationRule(name = "", trigger = AutomationTrigger.POWER_CONNECTED, action = AutomationAction.SPEAK_TEXT, targetMessage = "Charging started")
         },

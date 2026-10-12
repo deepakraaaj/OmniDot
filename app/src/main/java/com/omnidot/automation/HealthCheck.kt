@@ -10,13 +10,16 @@ import androidx.core.app.NotificationManagerCompat
 
 enum class HealthIssue(val title: String, val detail: String) {
     NOTIFICATIONS_BLOCKED("Notifications are off", "Workflows that show notifications can't alert you."),
-    LISTENER_MISSING("WhatsApp access needed", "Allow notification access so WhatsApp workflows can run."),
+    LISTENER_MISSING("Notification access needed", "Allow notification access so WhatsApp and alarm workflows can run."),
     BACKGROUND_RESTRICTED("Background usage is off", "Allow background usage so device events reach OmniDot."),
 }
 
 data class HealthProbe(val notificationsGranted: Boolean, val listenerGranted: Boolean, val backgroundAllowed: Boolean)
 
 object HealthCheck {
+    /** Triggers that read notifications and so need notification access. */
+    val listenerTriggers = setOf(AutomationTrigger.WHATSAPP_MESSAGE, AutomationTrigger.PHONE_ALARM_RINGS, AutomationTrigger.ALARM_DISMISSED)
+
     fun issues(
         notificationsGranted: Boolean,
         listenerGranted: Boolean,
@@ -27,7 +30,7 @@ object HealthCheck {
         if (enabled.isEmpty()) return emptyList()
         return buildList {
             if (!notificationsGranted && enabled.any { it.action == AutomationAction.SHOW_NOTIFICATION }) add(HealthIssue.NOTIFICATIONS_BLOCKED)
-            if (!listenerGranted && enabled.any { it.trigger == AutomationTrigger.WHATSAPP_MESSAGE }) add(HealthIssue.LISTENER_MISSING)
+            if (!listenerGranted && enabled.any { it.trigger in listenerTriggers }) add(HealthIssue.LISTENER_MISSING)
             if (!backgroundAllowed) add(HealthIssue.BACKGROUND_RESTRICTED)
         }
     }

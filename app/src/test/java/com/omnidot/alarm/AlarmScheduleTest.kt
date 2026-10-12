@@ -12,18 +12,16 @@ class AlarmScheduleTest {
 
     @Test
     fun `one-time alarm rings today if still ahead, else tomorrow`() {
-        val alarm = CalmAlarm("a", 6 * 60 + 30)
-        assertEquals(at(12, 6, 30), AlarmSchedule.nextTrigger(at(12, 5, 0), alarm))
-        assertEquals(at(13, 6, 30), AlarmSchedule.nextTrigger(at(12, 6, 30), alarm))
+                assertEquals(at(12, 6, 30), AlarmSchedule.nextTrigger(at(12, 5, 0), 6 * 60 + 30))
+        assertEquals(at(13, 6, 30), AlarmSchedule.nextTrigger(at(12, 6, 30), 6 * 60 + 30))
     }
 
     @Test
     fun `weekday alarm skips the weekend`() {
         val weekdays = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY)
-        val alarm = CalmAlarm("a", 7 * 60, days = weekdays)
         // Friday Oct 16 after 7:00 → Monday Oct 19
-        assertEquals(at(19, 7, 0), AlarmSchedule.nextTrigger(at(16, 8, 0), alarm))
-        assertEquals(at(13, 7, 0), AlarmSchedule.nextTrigger(at(12, 9, 0), alarm))
+        assertEquals(at(19, 7, 0), AlarmSchedule.nextTrigger(at(16, 8, 0), 7 * 60, weekdays))
+        assertEquals(at(13, 7, 0), AlarmSchedule.nextTrigger(at(12, 9, 0), 7 * 60, weekdays))
     }
 
     @Test

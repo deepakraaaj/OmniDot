@@ -16,12 +16,30 @@ import kotlinx.coroutines.launch
 class OmniNotificationListenerService : NotificationListenerService() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val alarmTracker by lazy { AlarmNotificationTracker(packageName) }
+
+    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
+        super.onNotificationRemoved(sbn)
+        sbn ?: return
+        alarmTracker.onRemoved(sbn.key)?.let { runTrigger(it) }
+    }
+
+    private fun runTrigger(trigger: AutomationTrigger) {
+        scope.launch {
+            val repository = AutomationRepository(applicationContext)
+            repository.current().filter { it.enabled && it.trigger == trigger }.forEach { rule ->
+                val result = AutomationEngine.execute(applicationContext, rule)
+                repository.recordRun(rule.id, result.getOrElse { "Error: ${it.message}" })
+            }
+        }
+    }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         super.onNotificationPosted(sbn)
         if (sbn == null) return
 
         val pkg = sbn.packageName ?: return
+        alarmTracker.onPosted(sbn.key, pkg, sbn.notification.category)?.let { runTrigger(it) }
         if (pkg != "com.whatsapp" && pkg != "com.whatsapp.w4b") return
 
         val extras = sbn.notification.extras ?: return

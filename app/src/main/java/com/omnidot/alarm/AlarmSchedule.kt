@@ -1,17 +1,18 @@
 package com.omnidot.alarm
 
+import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalTime
 import java.time.ZonedDateTime
 
 object AlarmSchedule {
-    /** The next ring strictly after [now], honouring the alarm's weekdays (none = once). */
-    fun nextTrigger(now: ZonedDateTime, alarm: CalmAlarm): ZonedDateTime {
-        val time = LocalTime.of(alarm.minuteOfDay / 60, alarm.minuteOfDay % 60)
+    /** The next occurrence strictly after [now] on one of [days] (empty = any day). */
+    fun nextTrigger(now: ZonedDateTime, minuteOfDay: Int, days: Set<DayOfWeek> = emptySet()): ZonedDateTime {
+        val time = LocalTime.of(minuteOfDay / 60, minuteOfDay % 60)
         var day = now.toLocalDate()
         repeat(8) {
             val candidate = day.atTime(time).atZone(now.zone)
-            if (candidate.isAfter(now) && (alarm.days.isEmpty() || candidate.dayOfWeek in alarm.days)) return candidate
+            if (candidate.isAfter(now) && (days.isEmpty() || candidate.dayOfWeek in days)) return candidate
             day = day.plusDays(1)
         }
         return now.toLocalDate().plusDays(1).atTime(time).atZone(now.zone)

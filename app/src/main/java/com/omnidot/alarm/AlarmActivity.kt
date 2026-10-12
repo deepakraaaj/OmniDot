@@ -57,12 +57,11 @@ class AlarmActivity : ComponentActivity() {
             window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
         }
         enableEdgeToEdge()
-        val alarmId = intent.getStringExtra(AlarmScheduler.EXTRA_ALARM_ID)
+        val ring = AlarmRingService.Ring.from(intent)
         setContent {
             OmniDotTheme(darkTheme = true) {
                 val ringing by AlarmRingService.ringing.collectAsStateWithLifecycle()
                 LaunchedEffect(ringing) { if (ringing == null) { delay(300); finish() } }
-                val alarm by produceState<CalmAlarm?>(null) { value = alarmId?.let { AlarmRepository(this@AlarmActivity).find(it) } }
                 val goals by GoalRepository(this).goals.collectAsStateWithLifecycle(emptyList())
                 val now by produceState(LocalTime.now()) { while (true) { value = LocalTime.now(); delay(1_000) } }
                 val today = LocalDate.now()
@@ -74,7 +73,7 @@ class AlarmActivity : ComponentActivity() {
                     ) {
                         Spacer(Modifier.heightIn(min = 24.dp))
                         Text(now.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)), fontSize = 72.sp, fontWeight = FontWeight.Light)
-                        Text(alarm?.label?.ifBlank { null } ?: "Good morning", style = MaterialTheme.typography.titleLarge,
+                        Text(ring?.label?.ifBlank { null } ?: "Good morning", style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         val todays = goals.filter { it.activeOn(today) }.sortedByDescending { it.tier.rank }
                         Column(Modifier.widthIn(max = 480.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -94,7 +93,7 @@ class AlarmActivity : ComponentActivity() {
                             OutlinedButton(
                                 onClick = { AlarmRingService.send(this@AlarmActivity, AlarmRingService.ACTION_SNOOZE) },
                                 modifier = Modifier.weight(1f).heightIn(min = 64.dp),
-                            ) { Text("Snooze ${alarm?.snoozeMinutes ?: 10} min", style = MaterialTheme.typography.titleMedium) }
+                            ) { Text("Snooze ${ring?.snoozeMinutes ?: 10} min", style = MaterialTheme.typography.titleMedium) }
                             Button(
                                 onClick = { AlarmRingService.send(this@AlarmActivity, AlarmRingService.ACTION_DISMISS) },
                                 modifier = Modifier.weight(1f).heightIn(min = 64.dp),

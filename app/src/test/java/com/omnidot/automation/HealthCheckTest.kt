@@ -25,4 +25,10 @@ class HealthCheckTest {
     fun `allowed background usage needs no fix even when battery is optimized`() {
         assertEquals(emptyList<HealthIssue>(), HealthCheck.issues(true, true, backgroundAllowed = true, rules = listOf(speak)))
     }
+
+    @Test
+    fun `phone alarm triggers need notification access`() {
+        val alarm = speak.copy(id = "a", trigger = AutomationTrigger.PHONE_ALARM_RINGS)
+        assertEquals(listOf(HealthIssue.LISTENER_MISSING), HealthCheck.issues(true, false, true, listOf(alarm)))
+    }
 }

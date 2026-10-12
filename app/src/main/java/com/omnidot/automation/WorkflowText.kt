@@ -7,6 +7,8 @@ object WorkflowText {
     data class LastRun(val text: String, val failed: Boolean)
 
     fun whenText(rule: AutomationRule): String = when (rule.trigger) {
+        AutomationTrigger.PHONE_ALARM_RINGS -> "When my alarm rings"
+        AutomationTrigger.ALARM_DISMISSED -> "When I turn off my alarm"
         AutomationTrigger.POWER_CONNECTED -> "When charger connects"
         AutomationTrigger.POWER_DISCONNECTED -> "When charger disconnects"
         AutomationTrigger.BATTERY_LOW -> "When battery drops below 20%"
@@ -24,6 +26,7 @@ object WorkflowText {
     }
 
     fun doText(rule: AutomationRule): String = when (rule.action) {
+        AutomationAction.RING_ALARM -> if (rule.alarmLabel.isBlank()) "Ring calm alarm" else "Ring calm alarm \"${rule.alarmLabel}\""
         AutomationAction.SPEAK_TEXT -> if (rule.targetMessage.isBlank()) "Speak your words" else "Speak \"${rule.targetMessage}\""
         AutomationAction.SEND_WHATSAPP -> "Open WhatsApp to ${rule.contactName.ifBlank { "a contact" }}"
         AutomationAction.CALL_PHONE -> "Open dialer for ${rule.contactName.ifBlank { "a contact" }}"

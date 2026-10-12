@@ -88,6 +88,9 @@ class AutomationRuleTest {
         hidden.forEach { assertTrue(!it.available && it !in AutomationTrigger.pickerOptions) }
         assertTrue(AutomationTrigger.POWER_CONNECTED in AutomationTrigger.pickerOptions)
         assertTrue(AutomationTrigger.SCHEDULED_TIME in AutomationTrigger.pickerOptions)
+        assertTrue(AutomationTrigger.ALARM_DISMISSED in AutomationTrigger.pickerOptions)
+        assertTrue(AutomationTrigger.PHONE_ALARM_RINGS in AutomationTrigger.pickerOptions)
+        assertTrue(AutomationAction.RING_ALARM in AutomationAction.workflowOptions)
     }
 
     @Test

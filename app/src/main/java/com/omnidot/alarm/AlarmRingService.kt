@@ -19,6 +19,9 @@ import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import com.omnidot.R
+import com.omnidot.automation.AutomationEngine
+import com.omnidot.automation.AutomationRepository
+import com.omnidot.automation.AutomationTrigger
 import com.omnidot.automation.BellTone
 import com.omnidot.automation.VoiceFeedbackManager
 import com.omnidot.automation.VoiceStyle
@@ -41,30 +44,30 @@ class AlarmRingService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var track: AudioTrack? = null
     private var ramp: Job? = null
-    private var alarmId: String? = null
+    private var ring: Ring? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_SNOOZE -> finish { alarm -> AlarmScheduler.ringAt(this, alarm.id, ZonedDateTime.now().plusMinutes(alarm.snoozeMinutes.toLong())) }
-            ACTION_DISMISS -> finish { alarm -> onWokeUp(alarm) }
-            else -> start(intent?.getStringExtra(AlarmScheduler.EXTRA_ALARM_ID))
+            ACTION_SNOOZE -> finish { r -> AlarmScheduler.snooze(this, r, ZonedDateTime.now().plusMinutes(r.snoozeMinutes.toLong())) }
+            ACTION_DISMISS -> finish { r -> onWokeUp(r) }
+            else -> start(intent?.let { Ring.from(it) })
         }
         return START_NOT_STICKY
     }
 
-    private fun start(id: String?) {
-        if (id == null) {
+    private fun start(r: Ring?) {
+        if (r == null) {
             stopSelf()
             return
         }
-        alarmId = id
+        ring = r
         ServiceCompat.startForeground(
-            this, NOTIFICATION_ID, notification(id),
+            this, NOTIFICATION_ID, notification(r),
             if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK else 0,
         )
-        _ringing.value = id
+        _ringing.value = r
         startSound()
     }
 
@@ -109,32 +112,31 @@ class AlarmRingService : Service() {
         track = null
     }
 
-    private fun finish(then: suspend (CalmAlarm) -> Unit) {
+    private fun finish(then: suspend (Ring) -> Unit) {
         stopSound()
         _ringing.value = null
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
-        val id = alarmId
+        val current = ring
         scope.launch {
             try {
-                id?.let { AlarmRepository(this@AlarmRingService).find(it) }?.let { then(it) }
+                current?.let { then(it) }
             } finally {
                 stopSelf()
             }
         }
     }
 
-    private suspend fun onWokeUp(alarm: CalmAlarm) {
-        val repository = AlarmRepository(this)
-        if (alarm.days.isEmpty()) {
-            repository.save(alarm.copy(enabled = false))
-            AlarmScheduler.cancel(this, alarm.id)
-        } else {
-            AlarmScheduler.scheduleNext(this, alarm)
-        }
-        if (alarm.speakGreeting) {
+    private suspend fun onWokeUp(r: Ring) {
+        if (r.speakGreeting) {
             val text = MorningGreeting.text(GoalRepository(this).current(), LocalDate.now())
             val calm = VoiceStyle.CALM
             VoiceFeedbackManager.speak(this, text, calm.pitch, calm.rate, calm.volume, waitForCompletion = true)
+        }
+        // Chain "When I wake up" workflows (lights on, coffee webhook, music…).
+        val repository = AutomationRepository(this)
+        repository.current().filter { it.enabled && it.trigger == AutomationTrigger.ALARM_DISMISSED }.forEach { rule ->
+            val result = AutomationEngine.execute(this, rule)
+            repository.recordRun(rule.id, result.getOrElse { "Error: ${it.message}" })
         }
     }
 
@@ -148,7 +150,7 @@ class AlarmRingService : Service() {
         }
     }
 
-    private fun notification(id: String): Notification {
+    private fun notification(r: Ring): Notification {
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_ID, "Calm alarms", NotificationManager.IMPORTANCE_HIGH).apply {
@@ -157,13 +159,13 @@ class AlarmRingService : Service() {
             },
         )
         val fullScreen = PendingIntent.getActivity(
-            this, 0, Intent(this, AlarmActivity::class.java).putExtra(AlarmScheduler.EXTRA_ALARM_ID, id)
+            this, 0, r.putInto(Intent(this, AlarmActivity::class.java))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Good morning")
+            .setContentTitle(r.label.ifBlank { "Good morning" })
             .setContentText("Your calm alarm is ringing")
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -194,12 +196,35 @@ class AlarmRingService : Service() {
         private const val CHANNEL_ID = "calm_alarm"
         private const val NOTIFICATION_ID = 4301
 
-        private val _ringing = MutableStateFlow<String?>(null)
-        /** Id of the alarm currently ringing, or null. */
+        private val _ringing = MutableStateFlow<Ring?>(null)
+        /** The alarm currently ringing, or null. */
         val ringing = _ringing.asStateFlow()
+
+        fun start(context: Context, ring: Ring) {
+            androidx.core.content.ContextCompat.startForegroundService(
+                context, ring.putInto(Intent(context, AlarmRingService::class.java).setAction(ACTION_START)),
+            )
+        }
 
         fun send(context: Context, action: String) {
             context.startService(Intent(context, AlarmRingService::class.java).setAction(action))
+        }
+    }
+
+    /** What to ring: carried through intents so snooze and full screen keep the workflow's settings. */
+    data class Ring(val id: String, val label: String, val snoozeMinutes: Int, val speakGreeting: Boolean) {
+        fun putInto(intent: Intent): Intent = intent.putExtra(EXTRA_ID, id).putExtra(EXTRA_LABEL, label)
+            .putExtra(EXTRA_SNOOZE, snoozeMinutes).putExtra(EXTRA_GREETING, speakGreeting)
+
+        companion object {
+            private const val EXTRA_ID = "ring_id"
+            private const val EXTRA_LABEL = "ring_label"
+            private const val EXTRA_SNOOZE = "ring_snooze"
+            private const val EXTRA_GREETING = "ring_greeting"
+
+            fun from(intent: Intent): Ring? = intent.getStringExtra(EXTRA_ID)?.let {
+                Ring(it, intent.getStringExtra(EXTRA_LABEL).orEmpty(), intent.getIntExtra(EXTRA_SNOOZE, 10), intent.getBooleanExtra(EXTRA_GREETING, true))
+            }
         }
     }
 }
