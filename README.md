@@ -1,30 +1,36 @@
 # OmniDot
 
-OmniDot is a local-first Android lockscreen matrix HUD. It renders time visualizations directly with `Bitmap`, `Canvas`, and `Paint`, then applies the result only to the lockscreen through `WallpaperManager.FLAG_LOCK`.
+OmniDot is a calm, local-first Android app for small automations and daily goals.
 
-## Features
+- **Workflows** — "when this happens, do that": charger, battery, unlock, headphones, Wi-Fi,
+  WhatsApp notifications and remote triggers → speak in a calm voice, notify, vibrate,
+  call webhooks (Discord, Slack, Home Assistant, n8n) and more.
+- **Goals** — small 🌱, medium 🌊 and big ⛰️ goals with a daily check-in. Your lock screen
+  shows one dot per day in the colour and shape of your biggest win.
+- **Lock screen views** — Goals, Year in dots, Life in weeks; refreshed after each check-in
+  and at midnight once you've applied it.
 
-- Year progress, 4,160-week life grid, 100-day sprint, and a 52 × 7 local heatmap
-- Native Kotlin/Compose UI with an OLED-first Material 3 theme
-- Preferences stored on-device with DataStore
-- One-shot WorkManager refresh scheduled for local midnight and restored after reboot
-- No network permission, account, analytics, server, or resident background service
+## Permissions
+
+| Permission | Why |
+|---|---|
+| Set wallpaper | Draw the lock screen dots |
+| Run at startup | Reschedule the midnight refresh and check-in reminder |
+| Notifications | Check-in reminders and "show notification" workflows |
+| Internet, network state | Webhook workflows and Wi-Fi triggers (nothing is sent unless a workflow does it) |
+| Vibrate | "Vibrate" workflows |
+| Notification access (optional) | WhatsApp message triggers |
+
+Device-event triggers currently work while OmniDot is running; background reliability is next.
 
 ## Build
 
-Install Android SDK 35 and JDK 17, then run:
+Requires the Android SDK 35. Gradle provisions JDK 17 automatically.
 
-```bash
-./gradlew testDebugUnitTest assembleDebug
-```
+    ./gradlew testDebugUnitTest assembleDebug
 
 The debug APK is written to `app/build/outputs/apk/debug/`.
-
-## Privacy
-
-OmniDot requests only wallpaper and boot-completion permissions. It has no internet permission, so configuration and rendering stay on the device.
 
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE).
-

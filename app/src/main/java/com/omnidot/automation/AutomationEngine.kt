@@ -101,7 +101,7 @@ object AutomationEngine {
                         val embed = JSONObject().apply {
                             put("title", "OmniDot Automation Event")
                             put("description", resolvedMessage)
-                            put("color", 15093760) // OmniOrange hex int
+                            put("color", 0x5FB3A6) // OmniDot teal
                             val fields = JSONArray().apply {
                                 put(JSONObject().put("name", "Trigger").put("value", rule.trigger.label).put("inline", true))
                                 put(JSONObject().put("name", "Active Matrix").put("value", rule.preset.title).put("inline", true))
