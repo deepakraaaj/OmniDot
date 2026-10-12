@@ -8,7 +8,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +27,7 @@ import com.omnidot.data.PreferencesManager
 import com.omnidot.ui.AppTab
 import com.omnidot.ui.OmniDotApp
 import com.omnidot.ui.goals.GoalsScreen
+import com.omnidot.ui.settings.SettingsScreen
 import com.omnidot.ui.workflows.WorkflowEditor
 import com.omnidot.ui.workflows.WorkflowsScreen
 import com.omnidot.ui.theme.OmniDotTheme
@@ -82,7 +82,7 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     goals = { padding, snackbar -> GoalsScreen(padding, snackbar) },
-                    settings = { padding, _ -> Box(Modifier.padding(padding)) { Text("Settings") } },
+                    settings = { padding, snackbar -> SettingsScreen(padding, snackbar, viewModel) },
                 )
             }
         }

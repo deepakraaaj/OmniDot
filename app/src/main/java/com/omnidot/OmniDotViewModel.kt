@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.omnidot.automation.AutomationEngine
 import com.omnidot.automation.AutomationRepository
 import com.omnidot.automation.AutomationRule
+import com.omnidot.automation.VoiceStyle
+import com.omnidot.goals.reminder.CheckInReminderWorker
 import com.omnidot.core.MatrixSyncWorker
 import com.omnidot.data.OmniDotPreferences
 import com.omnidot.data.PreferencesManager
@@ -30,8 +32,12 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
         emptyList(),
     )
 
+    private val _remoteKey = MutableStateFlow("")
+    val remoteKey = _remoteKey.asStateFlow()
+
     init {
         viewModelScope.launch {
+            _remoteKey.value = preferencesManager.remoteKey()
             automationRepository.ensureDefaultRules()
             if (preferencesManager.current().automaticUpdates) {
                 MatrixSyncWorker.scheduleNext(application)
@@ -66,4 +72,19 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
         onResult?.invoke(msg)
     }
 
+
+    fun setVoiceStyle(style: VoiceStyle) = viewModelScope.launch { preferencesManager.setVoiceStyle(style) }
+
+    fun setReminderEnabled(enabled: Boolean) = viewModelScope.launch {
+        preferencesManager.setReminder(enabled)
+        if (enabled) CheckInReminderWorker.schedule(getApplication(), preferencesManager.current().reminderMinuteOfDay)
+        else CheckInReminderWorker.cancel(getApplication())
+    }
+
+    fun setReminderTime(minuteOfDay: Int) = viewModelScope.launch {
+        preferencesManager.setReminderMinuteOfDay(minuteOfDay)
+        if (preferencesManager.current().reminderEnabled) CheckInReminderWorker.schedule(getApplication(), minuteOfDay)
+    }
+
+    fun regenerateRemoteKey() = viewModelScope.launch { _remoteKey.value = preferencesManager.regenerateRemoteKey() }
 }
