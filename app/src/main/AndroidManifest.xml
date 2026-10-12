@@ -67,6 +67,8 @@
             </intent-filter>
         </receiver>
 
+        <receiver android:name=".goals.reminder.CheckInReceiver" android:exported="false" />
+
         <service
             android:name=".automation.OmniNotificationListenerService"
             android:label="OmniDot Notification &amp; WhatsApp Monitor"

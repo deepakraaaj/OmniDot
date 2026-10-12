@@ -26,6 +26,10 @@ import com.omnidot.ui.theme.OmniDotTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        const val EXTRA_OPEN_TAB = "open_tab"
+    }
+
     private val viewModel: OmniDotViewModel by viewModels()
 
     private fun showToast(message: String) {
