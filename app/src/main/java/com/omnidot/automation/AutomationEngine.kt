@@ -41,12 +41,12 @@ object AutomationEngine {
                 AutomationAction.APPLY_PRESET -> {
                     preferencesManager.setPreset(rule.preset)
                     val updated = currentPrefs.copy(preset = rule.preset)
-                    AdaptiveMatrixEngine().applyToLockscreen(context, updated)
+                    AdaptiveMatrixEngine().applyToLockscreen(context, updated, emptyList())
                     "Lockscreen updated with '${rule.preset.title}'"
                 }
 
                 AutomationAction.REFRESH_CURRENT -> {
-                    AdaptiveMatrixEngine().applyToLockscreen(context, currentPrefs)
+                    AdaptiveMatrixEngine().applyToLockscreen(context, currentPrefs, emptyList())
                     "Current lockscreen HUD refreshed"
                 }
 
@@ -56,7 +56,7 @@ object AutomationEngine {
                     val nextPreset = presets[(currentIndex + 1) % presets.size]
                     preferencesManager.setPreset(nextPreset)
                     val updated = currentPrefs.copy(preset = nextPreset)
-                    AdaptiveMatrixEngine().applyToLockscreen(context, updated)
+                    AdaptiveMatrixEngine().applyToLockscreen(context, updated, emptyList())
                     "Cycled to next preset: ${nextPreset.title}"
                 }
 
@@ -74,7 +74,7 @@ object AutomationEngine {
                     val nextColor = colors[(currentIndex + 1) % colors.size]
                     preferencesManager.setAccentColor(nextColor)
                     val updated = currentPrefs.copy(accentColor = nextColor)
-                    AdaptiveMatrixEngine().applyToLockscreen(context, updated)
+                    AdaptiveMatrixEngine().applyToLockscreen(context, updated, emptyList())
                     "Cycled accent color to #${Integer.toHexString(nextColor).uppercase()}"
                 }
 

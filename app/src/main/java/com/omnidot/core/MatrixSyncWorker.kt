@@ -25,7 +25,7 @@ class MatrixSyncWorker(
         // cannot break the daily chain. WorkManager safely defers this through Doze.
         scheduleNext(applicationContext)
         return try {
-            AdaptiveMatrixEngine().applyToLockscreen(applicationContext, settings)
+            AdaptiveMatrixEngine().applyToLockscreen(applicationContext, settings, emptyList())
             Result.success()
         } catch (_: SecurityException) {
             Result.failure()

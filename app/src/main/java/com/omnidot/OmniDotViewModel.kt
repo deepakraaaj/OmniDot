@@ -87,7 +87,7 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
     fun applyWallpaper() = viewModelScope.launch {
         _applyStatus.value = ApplyStatus.Applying
         _applyStatus.value = try {
-            AdaptiveMatrixEngine().applyToLockscreen(getApplication(), preferences.value)
+            AdaptiveMatrixEngine().applyToLockscreen(getApplication(), preferences.value, emptyList())
             if (preferences.value.automaticUpdates) MatrixSyncWorker.scheduleNext(getApplication())
             ApplyStatus.Applied
         } catch (error: Exception) {

@@ -2,6 +2,7 @@ package com.omnidot.core
 
 import com.omnidot.data.OmniDotPreferences
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
 
@@ -45,5 +46,14 @@ class AdaptiveMatrixEngineTest {
         )
         assertEquals(0, state.completed)
         assertEquals(0, state.currentIndex)
+    }
+
+    @Test
+    fun `grid geometry centres the grid and fits inside the screen`() {
+        val g = engine.gridGeometry(1080, 2400, OmniDotPreferences(), columns = 7, rows = 6)
+        val gridWidth = 7 * g.cell + 6 * g.gap
+        assertEquals(1080f, g.left * 2 + gridWidth, 0.5f)
+        assertTrue(g.top > 2400 * 0.3f)
+        assertTrue(g.top + 6 * g.cell + 5 * g.gap < 2400f)
     }
 }
