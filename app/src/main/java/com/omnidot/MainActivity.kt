@@ -84,10 +84,6 @@ class MainActivity : ComponentActivity() {
                         viewModel.setBirthDate(date)
                         showToast("Birth date set: $date")
                     },
-                    onRestartSprint = {
-                        viewModel.restartSprint()
-                        showToast("100-Day sprint restarted today!")
-                    },
                     onAutomaticUpdatesChanged = { enabled ->
                         viewModel.setAutomaticUpdates(enabled)
                         showToast(if (enabled) "Midnight refresh enabled" else "Midnight refresh disabled")

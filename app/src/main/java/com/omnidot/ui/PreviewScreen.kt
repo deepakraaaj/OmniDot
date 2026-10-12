@@ -127,7 +127,6 @@ fun CustomizeScreen(
     applyStatus: ApplyStatus,
     onBack: () -> Unit,
     onBirthDateChanged: (LocalDate) -> Unit,
-    onRestartSprint: () -> Unit,
     onAutomaticUpdatesChanged: (Boolean) -> Unit,
     onVerticalOffsetChanged: (Float) -> Unit,
     onMatrixScaleChanged: (Float) -> Unit,
@@ -152,7 +151,7 @@ fun CustomizeScreen(
             Spacer(Modifier.height(12.dp))
             ColorControls(preferences, onAccentColorChanged)
             Spacer(Modifier.height(12.dp))
-            PresetConfiguration(preferences, onBirthDateChanged, onRestartSprint)
+            PresetConfiguration(preferences, onBirthDateChanged)
             Spacer(Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
@@ -330,7 +329,6 @@ private fun PresetChip(preset: MatrixPreset, selected: Boolean, onClick: () -> U
 private fun PresetConfiguration(
     preferences: OmniDotPreferences,
     onBirthDateChanged: (LocalDate) -> Unit,
-    onRestartSprint: () -> Unit,
 ) {
     val context = LocalContext.current
     when (preferences.preset) {
@@ -343,9 +341,6 @@ private fun PresetConfiguration(
             }.show()
         }, modifier = Modifier.fillMaxWidth()) {
             Text("BIRTH DATE · ${preferences.birthDate}")
-        }
-        MatrixPreset.SPRINT_100 -> OutlinedButton(onClick = onRestartSprint, modifier = Modifier.fillMaxWidth()) {
-            Text("RESTART SPRINT TODAY · ${preferences.sprintStart}")
         }
         else -> Unit
     }

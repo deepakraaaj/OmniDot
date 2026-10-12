@@ -63,10 +63,6 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
         preferencesManager.setBirthDate(date)
     }
 
-    fun restartSprint() = viewModelScope.launch {
-        preferencesManager.setSprintStart(LocalDate.now())
-    }
-
     fun setAutomaticUpdates(enabled: Boolean) = viewModelScope.launch {
         preferencesManager.setAutomaticUpdates(enabled)
         if (enabled) MatrixSyncWorker.scheduleNext(getApplication())

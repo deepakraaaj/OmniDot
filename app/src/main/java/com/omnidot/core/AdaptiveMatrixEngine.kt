@@ -55,37 +55,16 @@ class AdaptiveMatrixEngine {
                     elapsed.takeIf { it in 0 until 4_160 && !today.isBefore(settings.birthDate) },
                 )
             }
-            MatrixPreset.SPRINT_100 -> {
-                val elapsed = ChronoUnit.DAYS.between(settings.sprintStart, today).toInt() + 1
-                MatrixState(
-                    100,
-                    elapsed.coerceIn(0, 100),
-                    10,
-                    10,
-                    "${elapsed.coerceIn(0, 100)} / 100 DAYS",
-                    (elapsed - 1).takeIf { it in 0 until 100 },
-                )
-            }
-            MatrixPreset.CONTRIBUTION_HEATMAP -> {
-                val yearStart = today.minusDays(363)
-                val completed = ChronoUnit.DAYS.between(yearStart, today).toInt() + 1
-                MatrixState(
-                    364,
-                    completed.coerceIn(0, 364),
-                    52,
-                    7,
-                    "52 WEEKS · LOCAL ACTIVITY",
-                    completed.coerceIn(1, 364) - 1,
-                )
-            }
+            MatrixPreset.GOALS -> throw IllegalArgumentException("Goals use GoalsMatrix, not stateFor")
         }
     }
 
     fun render(
         size: Size,
-        settings: OmniDotPreferences,
+        requested: OmniDotPreferences,
         today: LocalDate = LocalDate.now(),
     ): Bitmap {
+        val settings = if (requested.preset == MatrixPreset.GOALS) requested.copy(preset = MatrixPreset.YEAR_PROGRESS) else requested
         require(size.width > 0 && size.height > 0) { "Bitmap dimensions must be positive" }
         val bitmap = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -145,15 +124,8 @@ class AdaptiveMatrixEngine {
         val current = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = CURRENT_POSITION }
         val radius = max(1f, cell * .24f)
         repeat(state.total) { index ->
-            val column: Int
-            val row: Int
-            if (settings.preset == MatrixPreset.CONTRIBUTION_HEATMAP) {
-                column = index / 7
-                row = index % 7
-            } else {
-                column = index % state.columns
-                row = index / state.columns
-            }
+            val column = index % state.columns
+            val row = index / state.columns
             val x = left + column * (cell + gap)
             val y = gridTop + row * (cell + gap)
             val isCurrent = index == state.currentIndex
@@ -162,11 +134,7 @@ class AdaptiveMatrixEngine {
                 index < state.completed -> active
                 else -> inactive
             }
-            if (!isCurrent && settings.preset == MatrixPreset.CONTRIBUTION_HEATMAP && index < state.completed) {
-                paint.alpha = 100 + deterministicIntensity(index, today) * 38
-            } else {
-                paint.alpha = 255
-            }
+            paint.alpha = 255
             canvas.drawRoundRect(RectF(x, y, x + cell, y + cell), radius, radius, paint)
         }
         if (isLockscreenSafeYear) {
@@ -197,9 +165,6 @@ class AdaptiveMatrixEngine {
             bitmap.recycle()
         }
     }
-
-    private fun deterministicIntensity(index: Int, date: LocalDate): Int =
-        ((index * 31L + date.year * 17L) xor (index * 7L)).mod(5).toInt()
 
     @Suppress("DEPRECATION")
     private fun physicalDisplaySize(context: Context): Size {
