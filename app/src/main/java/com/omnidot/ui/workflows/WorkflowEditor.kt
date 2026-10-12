@@ -161,7 +161,10 @@ fun WorkflowEditor(
             items = AutomationAction.workflowOptions + listOfNotNull(initial?.action?.takeIf { it !in AutomationAction.workflowOptions }),
             categoryOf = { it.category.label }, label = { it.label }, subtitle = { it.subtitle }, icon = { actionIcon(it) },
             locked = { false }, onUnlock = {},
-            onSelect = { rule = rule.copy(action = it); sheet = null },
+            onSelect = { picked ->
+                rule = rule.copy(action = picked, code = if (picked == AutomationAction.RUN_CODE && rule.code.isBlank()) com.omnidot.script.ScriptTemplates.boilerplate else rule.code)
+                sheet = null
+            },
             onDismiss = { sheet = null },
         )
     }

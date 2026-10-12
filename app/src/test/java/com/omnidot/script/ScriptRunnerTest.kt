@@ -101,4 +101,15 @@ class ScriptRunnerTest {
             assertTrue(name, ScriptRunner().compileError(code) == null)
         }
     }
+
+    @Test
+    fun `boilerplate runs as-is and respects its settings`() {
+        val api = FakeApi()
+        val result = ScriptRunner().run(ScriptTemplates.boilerplate, event, api)
+        assertTrue(result.error, result.ok)
+        assertEquals(listOf("notify:OmniDot:Join https://meet.x/abc"), api.calls)
+        val customised = ScriptTemplates.boilerplate.replace("onlyFrom: \"\"", "onlyFrom: \"Pradeep\"").replace("alarmInMinutes: 0", "alarmInMinutes: 20")
+        val r2 = ScriptRunner().run(customised, event, FakeApi().also { f -> ScriptRunner().run(customised, event, f).let { assertTrue(it.error, it.ok) }; assertTrue(f.calls.contains("alarm:20:Link from Pradeep")) })
+        assertTrue(r2.ok)
+    }
 }
