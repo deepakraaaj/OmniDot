@@ -30,9 +30,6 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
         emptyList(),
     )
 
-    private val _testStatus = MutableStateFlow<String?>(null)
-    val testStatus = _testStatus.asStateFlow()
-
     init {
         viewModelScope.launch {
             automationRepository.ensureDefaultRules()
@@ -59,19 +56,14 @@ class OmniDotViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun testAutomation(rule: AutomationRule, onResult: ((String) -> Unit)? = null) = viewModelScope.launch {
-        _testStatus.value = "Executing '${rule.name}'..."
         val result = AutomationEngine.execute(getApplication(), rule)
         val msg = if (result.isSuccess) {
             "✓ Success: ${result.getOrNull()}"
         } else {
             "✕ Failed: ${result.exceptionOrNull()?.message}"
         }
-        _testStatus.value = msg
         automationRepository.recordRun(rule.id, msg)
         onResult?.invoke(msg)
     }
 
-    fun clearTestStatus() {
-        _testStatus.value = null
-    }
 }

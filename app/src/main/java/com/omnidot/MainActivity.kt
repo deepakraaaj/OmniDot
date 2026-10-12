@@ -26,9 +26,9 @@ import com.omnidot.automation.RemoteTriggerGuard
 import com.omnidot.core.MatrixPreset
 import com.omnidot.data.PreferencesManager
 import com.omnidot.ui.AppTab
-import com.omnidot.ui.AutomationScreen
 import com.omnidot.ui.OmniDotApp
 import com.omnidot.ui.goals.GoalsScreen
+import com.omnidot.ui.workflows.WorkflowEditor
 import com.omnidot.ui.workflows.WorkflowsScreen
 import com.omnidot.ui.theme.OmniDotTheme
 import kotlinx.coroutines.launch
@@ -56,18 +56,18 @@ class MainActivity : ComponentActivity() {
                         LaunchedEffect(editorOpen) { setHideBar(editorOpen) }
                         val scope = rememberCoroutineScope()
                         if (editorOpen) {
-                            Box(Modifier.padding(padding)) {
-                                AutomationScreen(
-                                    rules = automations,
-                                    testStatus = null,
-                                    onBack = { editorOpen = false },
-                                    onSave = { viewModel.saveAutomation(it); editorOpen = false },
-                                    onEnabledChanged = { id, enabled -> viewModel.setAutomationEnabled(id, enabled) },
-                                    onDelete = { viewModel.deleteAutomation(it) },
-                                    onTest = { viewModel.testAutomation(it) },
-                                    onClearTestStatus = {},
-                                )
-                            }
+                            val prefs by viewModel.preferences.collectAsStateWithLifecycle()
+                            WorkflowEditor(
+                                initial = editing,
+                                defaultVoice = prefs.voiceStyle,
+                                onClose = { editorOpen = false },
+                                onSave = {
+                                    viewModel.saveAutomation(it)
+                                    editorOpen = false
+                                    scope.launch { snackbar.showSnackbar("Workflow saved") }
+                                },
+                                onTest = { rule -> viewModel.testAutomation(rule) { msg -> scope.launch { snackbar.showSnackbar(msg) } } },
+                            )
                         } else {
                             WorkflowsScreen(
                                 rules = automations,
