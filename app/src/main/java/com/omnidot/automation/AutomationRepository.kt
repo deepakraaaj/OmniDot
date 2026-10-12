@@ -1,0 +1,101 @@
+package com.omnidot.automation
+
+import android.content.Context
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import com.omnidot.core.MatrixPreset
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import org.json.JSONArray
+import org.json.JSONObject
+
+private val Context.automationDataStore by preferencesDataStore(name = "omnidot_automations")
+
+class AutomationRepository(private val context: Context) {
+    private val rulesKey = stringPreferencesKey("rules_json")
+
+    val rules: Flow<List<AutomationRule>> = context.automationDataStore.data.map { values ->
+        decode(values[rulesKey].orEmpty())
+    }
+
+    suspend fun current(): List<AutomationRule> = rules.first()
+
+    suspend fun save(rule: AutomationRule) = update { existing ->
+        existing.filterNot { it.id == rule.id } + rule
+    }
+
+    suspend fun setEnabled(id: String, enabled: Boolean) = update { existing ->
+        existing.map { if (it.id == id) it.copy(enabled = enabled) else it }
+    }
+
+    suspend fun recordRun(id: String, status: String) = update { existing ->
+        existing.map {
+            if (it.id == id) it.copy(
+                lastRunTime = System.currentTimeMillis(),
+                lastRunStatus = status,
+            ) else it
+        }
+    }
+
+    suspend fun delete(id: String) = update { existing -> existing.filterNot { it.id == id } }
+
+    private suspend fun update(transform: (List<AutomationRule>) -> List<AutomationRule>) {
+        context.automationDataStore.edit { values ->
+            values[rulesKey] = encode(transform(decode(values[rulesKey].orEmpty())))
+        }
+    }
+
+    private fun encode(rules: List<AutomationRule>): String = JSONArray().apply {
+        rules.forEach { rule ->
+            put(JSONObject().apply {
+                put("id", rule.id)
+                put("name", rule.name)
+                put("enabled", rule.enabled)
+                put("trigger", rule.trigger.name)
+                put("action", rule.action.name)
+                put("preset", rule.preset.name)
+                put("contactName", rule.contactName)
+                put("contactPhone", rule.contactPhone)
+                put("targetMessage", rule.targetMessage)
+                put("scheduledTime", rule.scheduledTime)
+                put("weatherCondition", rule.weatherCondition)
+                put("url", rule.url)
+                put("message", rule.message)
+                put("customPayload", rule.customPayload)
+                put("lastRunTime", rule.lastRunTime)
+                put("lastRunStatus", rule.lastRunStatus)
+            })
+        }
+    }.toString()
+
+    private fun decode(raw: String): List<AutomationRule> = runCatching {
+        val array = if (raw.isBlank()) JSONArray() else JSONArray(raw)
+        buildList {
+            repeat(array.length()) { index ->
+                val item = array.getJSONObject(index)
+                add(
+                    AutomationRule(
+                        id = item.optString("id", java.util.UUID.randomUUID().toString()),
+                        name = item.optString("name", "Custom workflow"),
+                        enabled = item.optBoolean("enabled", true),
+                        trigger = AutomationTrigger.fromStored(item.optString("trigger")),
+                        action = AutomationAction.fromStored(item.optString("action")),
+                        preset = MatrixPreset.fromStored(item.optString("preset")),
+                        contactName = item.optString("contactName", "Pradeep"),
+                        contactPhone = item.optString("contactPhone", ""),
+                        targetMessage = item.optString("targetMessage", "Hi I'm Deepak"),
+                        scheduledTime = item.optString("scheduledTime", "07:00"),
+                        weatherCondition = item.optString("weatherCondition", "Rain"),
+                        url = item.optString("url"),
+                        message = item.optString("message", "Progress: {year_percent}% complete"),
+                        customPayload = item.optString("customPayload", ""),
+                        lastRunTime = item.optLong("lastRunTime", 0L),
+                        lastRunStatus = item.optString("lastRunStatus", ""),
+                    ),
+                )
+            }
+        }
+    }.getOrDefault(emptyList())
+}
