@@ -1,5 +1,10 @@
 package com.omnidot.ui
 
+import android.app.Activity
+import android.content.Intent
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -395,12 +400,58 @@ private fun WorkflowEditor(
     var url by remember(initialRule?.id) { mutableStateOf(initialRule?.url ?: "") }
     var message by remember(initialRule?.id) { mutableStateOf(initialRule?.message ?: "Progress: {year_percent}% complete") }
     var customPayload by remember(initialRule?.id) { mutableStateOf(initialRule?.customPayload ?: "") }
-    var contactName by remember(initialRule?.id) { mutableStateOf(initialRule?.contactName ?: "Pradeep") }
+    var contactName by remember(initialRule?.id) { mutableStateOf(initialRule?.contactName ?: "") }
     var contactPhone by remember(initialRule?.id) { mutableStateOf(initialRule?.contactPhone ?: "") }
+    var contactPickerMessage by remember(initialRule?.id) { mutableStateOf<String?>(null) }
     var targetMessage by remember(initialRule?.id) { mutableStateOf(initialRule?.targetMessage ?: "Hi, I'm Deepak") }
     var scheduledTime by remember(initialRule?.id) { mutableStateOf(initialRule?.scheduledTime ?: "07:00") }
     var weatherCondition by remember(initialRule?.id) { mutableStateOf(initialRule?.weatherCondition ?: "Rain") }
     val context = LocalContext.current
+    val contactPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val contactUri = result.data?.data
+            if (contactUri == null) {
+                contactPickerMessage = "No contact was selected."
+            } else {
+                try {
+                    context.contentResolver.query(
+                        contactUri,
+                        arrayOf(
+                            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                            ContactsContract.CommonDataKinds.Phone.NUMBER,
+                        ),
+                        null,
+                        null,
+                        null,
+                    )?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                            val numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                            val selectedName = if (nameIndex >= 0) cursor.getString(nameIndex).orEmpty() else ""
+                            val selectedNumber = if (numberIndex >= 0) cursor.getString(numberIndex).orEmpty() else ""
+                            if (selectedNumber.isBlank()) {
+                                contactPickerMessage = "That contact has no phone number. Choose another contact."
+                            } else {
+                                contactName = selectedName
+                                contactPhone = selectedNumber
+                                contactPickerMessage = "Using $selectedName · $selectedNumber"
+                            }
+                        } else {
+                            contactPickerMessage = "Could not read that contact. Please choose again."
+                        }
+                    } ?: run {
+                        contactPickerMessage = "Could not read that contact. Please choose again."
+                    }
+                } catch (_: SecurityException) {
+                    contactPickerMessage = "Android did not grant access to that selected contact. Please choose again."
+                } catch (_: IllegalArgumentException) {
+                    contactPickerMessage = "That contact is no longer available. Please choose again."
+                }
+            }
+        }
+    }
 
     Card(
         colors = CardDefaults.cardColors(containerColor = SurfaceDark),
@@ -436,7 +487,6 @@ private fun WorkflowEditor(
                     onClick = {
                         trigger = AutomationTrigger.WHATSAPP_MESSAGE
                         action = AutomationAction.CALL_PHONE
-                        contactName = "Pradeep"
                         targetMessage = "Hi, I'm Deepak"
                     },
                     modifier = Modifier.weight(1f),
@@ -448,7 +498,6 @@ private fun WorkflowEditor(
                     onClick = {
                         trigger = AutomationTrigger.WEATHER_RAIN
                         action = AutomationAction.SEND_WHATSAPP
-                        contactName = "Pradeep"
                         targetMessage = "Bring an umbrella"
                         scheduledTime = "07:00"
                     },
@@ -537,22 +586,41 @@ private fun WorkflowEditor(
             val needsValidTime = trigger == AutomationTrigger.SCHEDULED_TIME || trigger == AutomationTrigger.WEATHER_RAIN
             if (needsContact) {
                 Spacer(Modifier.height(12.dp))
-                WorkflowTextField(
-                    value = contactName,
-                    onValueChange = { contactName = it },
-                    label = "Contact name",
-                    placeholder = "Pradeep",
-                )
-                Spacer(Modifier.height(8.dp))
-                WorkflowTextField(
-                    value = contactPhone,
-                    onValueChange = { contactPhone = it },
-                    label = "Phone number",
-                    placeholder = "+1 555 010 1234",
-                )
-                Spacer(Modifier.height(6.dp))
-                if (contactPhone.isBlank()) {
-                    WorkflowNotice("Add the contact's phone number before saving.")
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = OledBlack),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().border(1.dp, DotInactive, RoundedCornerShape(12.dp)),
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                        Text(
+                            if (contactPhone.isBlank()) "Choose from your saved contacts" else "Selected contact",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.sp,
+                        )
+                        if (contactPhone.isNotBlank()) {
+                            Spacer(Modifier.height(3.dp))
+                            Text("$contactName · $contactPhone", color = MutedText, fontSize = 11.sp)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = {
+                                contactPickerMessage = null
+                                contactPicker.launch(
+                                    Intent(
+                                        Intent.ACTION_PICK,
+                                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                                    ),
+                                )
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                        ) {
+                            Text(if (contactPhone.isBlank()) "PICK A CONTACT" else "CHANGE CONTACT")
+                        }
+                        contactPickerMessage?.let {
+                            Spacer(Modifier.height(4.dp))
+                            WorkflowNotice(it)
+                        }
+                    }
                 }
             }
 
