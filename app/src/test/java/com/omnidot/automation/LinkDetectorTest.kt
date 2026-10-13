@@ -17,4 +17,17 @@ class LinkDetectorTest {
         assertNull(LinkDetector.firstLink("see you at 5. ok?"))
         assertEquals("https://example.com/a", LinkDetector.firstLink("(https://example.com/a)."))
     }
+
+    @Test
+    fun `finds the domain in a WhatsApp link preview`() {
+        // WhatsApp notifications show a preview instead of the URL: "🔗 <page title> (<domain>)".
+        assertEquals("youtu.be", LinkDetector.firstLink("🔗 CM VIJAY ft.Ooroda Oththa Don (youtu.be)"))
+        assertEquals("instagram.com", LinkDetector.firstLink("🔗 Reel by someone (instagram.com)"))
+    }
+
+    @Test
+    fun `finds links on less common domains`() {
+        assertEquals("youtu.be/dQw4w9WgXcQ", LinkDetector.firstLink("watch youtu.be/dQw4w9WgXcQ"))
+        assertEquals("twitch.tv/someone", LinkDetector.firstLink("live at twitch.tv/someone"))
+    }
 }
