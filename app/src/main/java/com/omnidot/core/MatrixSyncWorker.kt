@@ -11,6 +11,7 @@ import com.omnidot.data.PreferencesManager
 import java.time.Duration
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CancellationException
 
 class MatrixSyncWorker(
     appContext: Context,
@@ -21,25 +22,32 @@ class MatrixSyncWorker(
         val settings = preferences.current()
         if (!settings.automaticUpdates) return Result.success()
 
-        // Enqueue tomorrow before rendering so a transient OEM/WallpaperManager failure
-        // cannot break the daily chain. WorkManager safely defers this through Doze.
-        scheduleNext(applicationContext)
-        return try {
+        try {
             WallpaperRefresher.refreshIfEnabled(applicationContext)
-            Result.success()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (_: SecurityException) {
-            Result.failure()
+            // Permission or OEM refusal: retrying today won't help, try again tomorrow.
         } catch (_: IllegalStateException) {
-            Result.failure()
         } catch (_: Exception) {
-            if (runAttemptCount < 3) Result.retry() else Result.failure()
+            if (runAttemptCount < 3) return Result.retry()
         }
+        // Chain tomorrow only once today's render is settled. REPLACE would cancel this very
+        // worker mid-render (a running worker still counts as unfinished unique work), so
+        // APPEND_OR_REPLACE queues tomorrow behind it instead. Always report success: a failed
+        // prerequisite would also fail the appended request and break the daily chain.
+        scheduleNext(applicationContext, policy = ExistingWorkPolicy.APPEND_OR_REPLACE)
+        return Result.success()
     }
 
     companion object {
         private const val UNIQUE_WORK = "omnidot_midnight_refresh"
 
-        fun scheduleNext(context: Context, now: ZonedDateTime = ZonedDateTime.now()) {
+        fun scheduleNext(
+            context: Context,
+            now: ZonedDateTime = ZonedDateTime.now(),
+            policy: ExistingWorkPolicy = ExistingWorkPolicy.REPLACE,
+        ) {
             val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay(now.zone)
             val delay = Duration.between(now, nextMidnight).coerceAtLeast(Duration.ZERO)
             val request = OneTimeWorkRequestBuilder<MatrixSyncWorker>()
@@ -48,7 +56,7 @@ class MatrixSyncWorker(
                 .build()
             WorkManager.getInstance(context).enqueueUniqueWork(
                 UNIQUE_WORK,
-                ExistingWorkPolicy.REPLACE,
+                policy,
                 request,
             )
         }

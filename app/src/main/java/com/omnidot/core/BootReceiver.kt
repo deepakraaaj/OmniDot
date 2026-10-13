@@ -26,6 +26,8 @@ class BootReceiver : BroadcastReceiver() {
                         AlarmScheduler.rescheduleAll(context)
                         val settings = PreferencesManager(context).current()
                         if (settings.reminderEnabled) CheckInReminderWorker.schedule(context, settings.reminderMinuteOfDay)
+                        // A midnight missed while the phone was off (or a date jump) leaves yesterday's matrix up.
+                        if (settings.automaticUpdates) runCatching { WallpaperRefresher.refreshIfEnabled(context) }
                     } finally {
                         pending.finish()
                     }
