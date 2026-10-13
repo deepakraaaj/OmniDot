@@ -3,6 +3,8 @@ package com.omnidot.ui.goals
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.omnidot.core.DotShape
+import com.omnidot.core.LabelPosition
 import com.omnidot.core.LockPeriod
 import com.omnidot.core.MatrixPreset
 import com.omnidot.core.MatrixSyncWorker
@@ -62,6 +64,12 @@ class GoalsViewModel(application: Application) : AndroidViewModel(application) {
     fun setBirthDate(date: LocalDate) = edit { prefs.setBirthDate(date) }
     fun setOffset(offset: Float) = edit { prefs.setVerticalOffset(offset) }
     fun setScale(scale: Float) = edit { prefs.setMatrixScale(scale) }
+    fun setDotShape(shape: DotShape) = edit { prefs.setDotShape(shape) }
+    fun setLabelPosition(position: LabelPosition) = edit { prefs.setLabelPosition(position) }
+    fun setDotSpacing(spacing: Float) = edit { prefs.setDotSpacing(spacing) }
+    fun setPastColor(color: Int) = edit { prefs.setAccentColor(color) }
+    fun setTodayColor(color: Int) = edit { prefs.setTodayColor(color) }
+    fun setFutureColor(color: Int) = edit { prefs.setFutureColor(color) }
     fun setAutomaticUpdates(enabled: Boolean) = viewModelScope.launch {
         prefs.setAutomaticUpdates(enabled)
         if (enabled) MatrixSyncWorker.scheduleNext(getApplication()) else MatrixSyncWorker.cancel(getApplication())

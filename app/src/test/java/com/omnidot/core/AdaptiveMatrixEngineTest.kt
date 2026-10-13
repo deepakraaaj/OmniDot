@@ -62,4 +62,38 @@ class AdaptiveMatrixEngineTest {
         assertEquals(1080 to 2400, engine.portraitSize(2400, 1080))
         assertEquals(1080 to 2400, engine.portraitSize(1080, 2400))
     }
+
+    @Test
+    fun `year progress has a short label with days left and percent`() {
+        val state = engine.stateFor(OmniDotPreferences(preset = MatrixPreset.YEAR_PROGRESS), LocalDate.of(2026, 10, 12))
+        assertEquals("80d left", state.shortLabel)
+        assertEquals(78, state.percent)
+    }
+
+    @Test
+    fun `life in weeks has a short label with weeks left`() {
+        val state = engine.stateFor(
+            OmniDotPreferences(preset = MatrixPreset.LIFE_IN_WEEKS, birthDate = LocalDate.of(2000, 1, 1)),
+            LocalDate.of(2000, 1, 15),
+        )
+        assertEquals("4158w left", state.shortLabel)
+        assertEquals(0, state.percent)
+    }
+
+    @Test
+    fun `dot spacing setting widens the gap between dots`() {
+        val tight = engine.gridGeometry(1080, 2400, OmniDotPreferences(dotSpacing = .2f), columns = 15, rows = 25)
+        val loose = engine.gridGeometry(1080, 2400, OmniDotPreferences(dotSpacing = .8f), columns = 15, rows = 25)
+        assertEquals(.2f, tight.gap / tight.cell, 0.001f)
+        assertEquals(.8f, loose.gap / loose.cell, 0.001f)
+    }
+
+    @Test
+    fun `new installs default to the round dot look`() {
+        val defaults = OmniDotPreferences()
+        assertEquals(DotShape.CIRCLE, defaults.dotShape)
+        assertEquals(LabelPosition.BELOW, defaults.labelPosition)
+        assertEquals(0xFFFFFFFF.toInt(), defaults.accentColor)
+    }
 }
+

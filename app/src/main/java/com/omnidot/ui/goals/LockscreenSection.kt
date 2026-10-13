@@ -1,16 +1,27 @@
 package com.omnidot.ui.goals
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.omnidot.core.AdaptiveMatrixEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.omnidot.core.DotShape
+import com.omnidot.core.LabelPosition
 import com.omnidot.core.LockPeriod
 import com.omnidot.core.MatrixPreset
 import com.omnidot.data.OmniDotPreferences
@@ -26,12 +37,13 @@ fun LockscreenSection(prefs: OmniDotPreferences, goals: List<Goal>, status: Appl
     val context = LocalContext.current
     var offset by remember(prefs.verticalOffset) { mutableFloatStateOf(prefs.verticalOffset) }
     var scale by remember(prefs.matrixScale) { mutableFloatStateOf(prefs.matrixScale) }
+    var spacing by remember(prefs.dotSpacing) { mutableFloatStateOf(prefs.dotSpacing) }
     val metrics = LocalContext.current.resources.displayMetrics
     val previewHeight = (432f * maxOf(metrics.widthPixels, metrics.heightPixels) / minOf(metrics.widthPixels, metrics.heightPixels)).toInt()
     // Render on a background thread so dragging the sliders stays smooth.
-    val preview by produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, prefs, goals, offset, scale, previewHeight) {
+    val preview by produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, prefs, goals, offset, scale, spacing, previewHeight) {
         value = withContext(Dispatchers.Default) {
-            AdaptiveMatrixEngine().render(android.util.Size(432, previewHeight), prefs.copy(verticalOffset = offset, matrixScale = scale), goals).asImageBitmap()
+            AdaptiveMatrixEngine().render(android.util.Size(432, previewHeight), prefs.copy(verticalOffset = offset, matrixScale = scale, dotSpacing = spacing), goals).asImageBitmap()
         }
     }
     SectionHeader("Lock screen")
@@ -51,6 +63,15 @@ fun LockscreenSection(prefs: OmniDotPreferences, goals: List<Goal>, status: Appl
         Slider(offset, { offset = it }, valueRange = -.15f..0.15f, onValueChangeFinished = { vm.setOffset(offset) })
         Text("Size", style = MaterialTheme.typography.labelLarge)
         Slider(scale, { scale = it }, valueRange = .6f..1.6f, onValueChangeFinished = { vm.setScale(scale) })
+        if (prefs.preset != MatrixPreset.GOALS) {
+            Text("Spacing", style = MaterialTheme.typography.labelLarge)
+            Slider(spacing, { spacing = it }, valueRange = .1f..1.2f, onValueChangeFinished = { vm.setDotSpacing(spacing) })
+            Dropdown("Dot shape", DotShape.entries, prefs.dotShape, { it.label }, vm::setDotShape)
+            Dropdown("Days left label", LabelPosition.entries, prefs.labelPosition, { it.label }, vm::setLabelPosition)
+            ColorChoice("Past days", PAST_COLORS, prefs.accentColor, vm::setPastColor)
+            ColorChoice("Today", TODAY_COLORS, prefs.todayColor, vm::setTodayColor)
+            ColorChoice("Days ahead", FUTURE_COLORS, prefs.futureColor, vm::setFutureColor)
+        }
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Text("Update every midnight", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             Switch(prefs.automaticUpdates, vm::setAutomaticUpdates)
@@ -81,6 +102,33 @@ private fun <T> Dropdown(label: String, options: List<T>, selected: T, text: (T)
         )
         ExposedDropdownMenu(expanded, { expanded = false }) {
             options.forEach { DropdownMenuItem(text = { Text(text(it)) }, onClick = { onSelect(it); expanded = false }) }
+        }
+    }
+}
+
+private val PAST_COLORS = listOf(0xFFFFFFFF, 0xFF5FB3A6, 0xFF7BC47F, 0xFF6FA8DC, 0xFFB39DDB, 0xFFFFD166, 0xFFFF6B3D).map { it.toInt() }
+private val TODAY_COLORS = listOf(0xFFFF6B3D, 0xFFFF1744, 0xFFFFD166, 0xFF5FB3A6, 0xFF2979FF, 0xFFAA00FF, 0xFFFFFFFF).map { it.toInt() }
+private val FUTURE_COLORS = listOf(0xFF3A3A3A, 0xFF262626, 0xFF4A4A4A, 0xFF5C5C5C, 0xFF2E3A46, 0xFF3A2E46).map { it.toInt() }
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ColorChoice(label: String, options: List<Int>, selected: Int, onSelect: (Int) -> Unit) {
+    Text(label, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        options.forEach { argb ->
+            val isSelected = argb == selected
+            Box(
+                Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color(argb))
+                    .border(if (isSelected) 3.dp else 1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, CircleShape)
+                    .clickable { onSelect(argb) }
+                    .semantics {
+                        contentDescription = "$label colour #${Integer.toHexString(argb).uppercase().takeLast(6)}"
+                        this.selected = isSelected
+                    },
+            )
         }
     }
 }
